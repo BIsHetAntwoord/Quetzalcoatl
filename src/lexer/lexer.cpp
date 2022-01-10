@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-const std::unordered_map<std::string, TokenType> KEYWORD_TYPES = {
+const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
     {"int", TokenType::KEY_INT},
     {"return", TokenType::KEY_RETURN}
 };
@@ -57,7 +57,7 @@ Token Lexer::lexId() {
     this->unread(1);
 
     //TODO: figure out how to use string_view on unordered_map
-    std::string token_content = std::string(this->tokenString());
+    std::string_view token_content = this->tokenString();
     if(KEYWORD_TYPES.count(token_content) > 0)
         return this->makeToken(KEYWORD_TYPES.at(token_content));
     else
