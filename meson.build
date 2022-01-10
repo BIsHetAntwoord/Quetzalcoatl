@@ -10,6 +10,8 @@ project(
 
 # Final executable
 sources = [
+    'src/lexer/filetable.cpp',
+    'src/lexer/lexer.cpp',
     'src/main.cpp'
 ]
 
