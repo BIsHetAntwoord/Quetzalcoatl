@@ -1,5 +1,7 @@
 #include "lexer/lexer.hpp"
 
+#include <sstream>
+#include <string>
 #include <unordered_map>
 
 const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
@@ -77,7 +79,7 @@ const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
     {"xor_eq", TokenType::XOR_ASSIGN},
 };
 
-Lexer::Lexer(const std::string_view& input, FileTable& files) : input(input), input_offset(0),
+Lexer::Lexer(std::string_view input, FileTable& files) : input(input), input_offset(0),
         position({1, 0, 0}), token_start_offset(0), files(files) {
     this->files.addFile("<unknown>");
 }
@@ -85,12 +87,12 @@ Lexer::Lexer(const std::string_view& input, FileTable& files) : input(input), in
 int Lexer::read() {
     if(this->input_offset >= this->input.size())
         return -1;
-    ++this->position.offset;
+    ++this->position.column;
     return (unsigned)this->input[this->input_offset++];
 }
 
 void Lexer::unread(size_t num) {
-    this->position.offset -= num;
+    this->position.column -= num;
     --this->input_offset;
 }
 
@@ -111,6 +113,11 @@ std::string_view Lexer::tokenString() {
     return this->input.substr(this->token_start_offset, this->input_offset - this->token_start_offset);
 }
 
+Token Lexer::error(SourceLocation loc, std::string_view msg) {
+    this->errors.emplace_back(loc, msg);
+    return this->makeToken(TokenType::INVALID);
+}
+
 bool Lexer::isIdChar(int c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
         (c >= '0' && c <= '9') || (c == '_');
@@ -127,22 +134,22 @@ void Lexer::consumeLine() {
     this->unread();
 }
 
-void Lexer::consumeMultiline() {
+std::optional<Token> Lexer::consumeMultiline() {
     int lookahead = this->read();
     while(lookahead != -1) {
         if(lookahead == '*') {
             lookahead = this->read();
             if(lookahead == '/')
-                return;
+                return std::nullopt;
         }
 
         if(lookahead != -1)
             lookahead = this->read();
     }
-    if(lookahead == -1) {
-        //TODO: print hier een error voor end-of-file in multiline comment
 
-    }
+    this->error(this->position, "unexpected end of file in multiline comment");
+    this->startToken();
+    return this->makeToken(TokenType::EOI);
 }
 
 Token Lexer::lexId() {
@@ -327,6 +334,64 @@ Token Lexer::lexColon() {
     return this->makeToken(TokenType::COLON);
 }
 
+std::optional<CodePoint> Lexer::lexEscapeSequence() {
+    auto loc = this->position;
+    int c = this->read();
+    switch (c) {
+        case -1:
+            this->error(loc, "unexpected end of escape sequence");
+            return std::nullopt;
+        case '\'':
+        case '"':
+        case '\\':
+            return {{static_cast<uint32_t>(c)}};
+        case 'a':
+            return {{'\a'}};
+        case 'b':
+            return {{'\b'}};
+        case 'f':
+            return {{'\f'}};
+        case 'n':
+            return {{'\n'}};
+        case 'r':
+            return {{'\r'}};
+        case 't':
+            return {{'\t'}};
+        case 'v':
+            return {{'\v'}};
+        // TODO: The other escape sequences
+        default:
+            this->error(loc, "invalid escape sequence");
+            return std::nullopt;
+    }
+}
+
+Token Lexer::lexStringLiteral() {
+    auto ss = std::stringstream();
+
+    while(true) {
+        auto loc = this->position;
+        int c = this->read();
+        switch (c) {
+            case '"':
+                return this->makeToken(TokenType::LITERAL_STRING);
+            case '\\': {
+                if(auto cp = this->lexEscapeSequence()) {
+                    ss << cp->toUtf8();
+                    break;
+                }
+                return this->makeToken(TokenType::INVALID);
+            }
+            case '\n':
+                return this->error(loc, "newline in string literal");
+            case -1:
+                return this->error(loc, "unexpected end of string literal");
+            default:
+                ss.put(c);
+        }
+    }
+}
+
 Token Lexer::lex() {
     while(true) {
         this->startToken();
@@ -340,7 +405,7 @@ Token Lexer::lex() {
                 break;
             case '\n':
                 ++this->position.line;
-                this->position.offset = 0;
+                this->position.column = 0;
                 break;
             case '+':
                 return this->lexPlus();
@@ -378,28 +443,34 @@ Token Lexer::lex() {
                 return this->makeToken(TokenType::OPEN_PAR);
             case ')':
                 return this->makeToken(TokenType::CLOSE_PAR);
+            case '[':
+                return this->makeToken(TokenType::OPEN_SB);
+            case ']':
+                return this->makeToken(TokenType::CLOSE_SB);
             case ';':
                 return this->makeToken(TokenType::SEMICOLON);
             case ',':
                 return this->makeToken(TokenType::COMMA);
             case '?':
                 return this->makeToken(TokenType::QUESTION);
-
             case '/': {
                 lookahead = this->read();
                 if(lookahead == '=')
                     return this->makeToken(TokenType::DIV_ASSIGN);
                 else if(lookahead == '/')
                     this->consumeLine();
-                else if(lookahead == '*')
-                    this->consumeMultiline();
+                else if(lookahead == '*') {
+                    if(auto tok = this->consumeMultiline())
+                        return tok.value();
+                }
                 else {
                     this->unread();
                     return this->makeToken(TokenType::DIV);
                 }
                 break;
             }
-
+            case '"':
+                return this->lexStringLiteral(); // TODO: L-Strings
             default: {
                 if(this->isIdChar(lookahead) && !this->isDigit(lookahead))
                     return this->lexId();
@@ -407,4 +478,8 @@ Token Lexer::lex() {
             }
         }
     }
+}
+
+std::span<const CompileError> Lexer::compileErrors() const {
+    return this->errors;
 }

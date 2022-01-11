@@ -1,33 +1,43 @@
 #ifndef _QUETZALCOATL_LEXER_LEXER_HPP
 #define _QUETZALCOATL_LEXER_LEXER_HPP
 
-#include <string_view>
-
 #include "lexer/token.hpp"
 #include "lexer/filetable.hpp"
+#include "source_location.hpp"
+#include "compile_error.hpp"
+#include "unicode.hpp"
+
+#include <string_view>
+#include <vector>
+#include <span>
+#include <optional>
+#include <cstdint>
 
 class Lexer {
 private:
     std::string_view input;
     size_t input_offset;
 
-    TokenPosition position;
-    TokenPosition token_start;
+    SourceLocation position;
+    SourceLocation token_start;
     size_t token_start_offset;
 
     FileTable& files;
+
+    std::vector<CompileError> errors;
 
     int read();
     void unread(size_t = 1);
     Token makeToken(TokenType);
     void startToken();
     std::string_view tokenString();
+    Token error(SourceLocation loc, std::string_view msg);
 
     bool isIdChar(int);
     bool isDigit(int);
 
     void consumeLine();
-    void consumeMultiline();
+    std::optional<Token> consumeMultiline();
 
     Token lexId();
     Token lexPlus();
@@ -43,10 +53,15 @@ private:
     Token lexNot();
     Token lexDot();
     Token lexColon();
+
+    std::optional<CodePoint> lexEscapeSequence();
+    Token lexStringLiteral();
 public:
-    Lexer(const std::string_view&, FileTable&);
+    Lexer(std::string_view, FileTable&);
 
     Token lex();
+
+    std::span<const CompileError> compileErrors() const;
 };
 
 #endif

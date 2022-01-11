@@ -1,7 +1,10 @@
 #ifndef _QUETZALCOATL_LEXER_TOKEN_HPP
 #define _QUETZALCOATL_LEXER_TOKEN_HPP
 
+#include "source_location.hpp"
+
 #include <string_view>
+#include <string>
 
 enum class TokenType {
     INVALID,
@@ -126,13 +129,9 @@ enum class TokenType {
     COLON,
     DOT,
     COMMA,
-    SEMICOLON
-};
+    SEMICOLON,
 
-struct TokenPosition {
-    size_t line;
-    size_t offset;
-    size_t file_id;
+    LITERAL_STRING
 };
 
 struct Token {
@@ -141,7 +140,9 @@ struct Token {
 
     };
     std::string_view raw;
-    TokenPosition pos;
+    SourceLocation pos;
 };
+
+const char* tokenTypeToString(TokenType type);
 
 #endif
