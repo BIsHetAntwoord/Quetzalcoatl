@@ -120,6 +120,31 @@ bool Lexer::isDigit(int c) {
     return (c >= '0' && c <= '9');
 }
 
+void Lexer::consumeLine() {
+    int lookahead = this->read();
+    while(lookahead != '\n' && lookahead != -1)
+        lookahead = this->read();
+    this->unread();
+}
+
+void Lexer::consumeMultiline() {
+    int lookahead = this->read();
+    while(lookahead != -1) {
+        if(lookahead == '*') {
+            lookahead = this->read();
+            if(lookahead == '/')
+                return;
+        }
+
+        if(lookahead != -1)
+            lookahead = this->read();
+    }
+    if(lookahead == -1) {
+        //TODO: print hier een error voor end-of-file in multiline comment
+
+    }
+}
+
 Token Lexer::lexId() {
     int lookahead = this->read();
     while(this->isIdChar(lookahead))
@@ -176,16 +201,6 @@ Token Lexer::lexStar() {
 
     this->unread();
     return this->makeToken(TokenType::STAR);
-}
-
-Token Lexer::lexDiv() {
-    int lookahead = this->read();
-
-    if(lookahead == '=')
-        return this->makeToken(TokenType::DIV_ASSIGN);
-
-    this->unread();
-    return this->makeToken(TokenType::DIV);
 }
 
 Token Lexer::lexMod() {
@@ -333,8 +348,6 @@ Token Lexer::lex() {
                 return this->lexMinus();
             case '*':
                 return this->lexStar();
-            case '/':
-                return this->lexDiv();
             case '%':
                 return this->lexMod();
             case '<':
@@ -371,6 +384,22 @@ Token Lexer::lex() {
                 return this->makeToken(TokenType::COMMA);
             case '?':
                 return this->makeToken(TokenType::QUESTION);
+
+            case '/': {
+                lookahead = this->read();
+                if(lookahead == '=')
+                    return this->makeToken(TokenType::DIV_ASSIGN);
+                else if(lookahead == '/')
+                    this->consumeLine();
+                else if(lookahead == '*')
+                    this->consumeMultiline();
+                else {
+                    this->unread();
+                    return this->makeToken(TokenType::DIV);
+                }
+                break;
+            }
+
             default: {
                 if(this->isIdChar(lookahead) && !this->isDigit(lookahead))
                     return this->lexId();

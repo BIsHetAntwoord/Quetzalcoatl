@@ -26,11 +26,13 @@ private:
     bool isIdChar(int);
     bool isDigit(int);
 
+    void consumeLine();
+    void consumeMultiline();
+
     Token lexId();
     Token lexPlus();
     Token lexMinus();
     Token lexStar();
-    Token lexDiv();
     Token lexMod();
     Token lexLt();
     Token lexGt();
