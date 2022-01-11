@@ -7,17 +7,12 @@ enum class TokenType {
     INVALID,
     EOI,
 
-    KEY_AND,
-    KEY_AND_EQ,
     KEY_ASM,
     KEY_AUTO,
-    KEY_BITAND,
-    KEY_BITOR,
     KEY_BOOL,
     KEY_BREAK,
     KEY_CASE,
     KEY_CLASS,
-    KEY_COMPL,
     KEY_CONST,
     KEY_CONST_CAST,
     KEY_CONTINUE,
@@ -43,11 +38,7 @@ enum class TokenType {
     KEY_MUTABLE,
     KEY_NAMESPACE,
     KEY_NEW,
-    KEY_NOT,
-    KEY_NOT_EQ,
     KEY_OPERATOR,
-    KEY_OR,
-    KEY_OR_EQ,
     KEY_PRIVATE,
     KEY_PROTECTED,
     KEY_PUBLIC,
@@ -77,16 +68,64 @@ enum class TokenType {
     KEY_VOLATILE,
     KEY_WCHAR_T,
     KEY_WHILE,
-    KEY_XOR,
-    KEY_XOR_EQ,
 
     ID,
+
+    PLUS, //TODO
+    MINUS, //TODO
+    STAR, //TODO
+    DIV, //TODO
+    MOD, //TODO
+    LSHIFT, //TODO
+    RSHIFT, //TODO
+    BITAND, //TODO
+    BITOR, //TODO
+    XOR, //TODO
+    BITNOT, //TODO
+
+    INCREMENT, //TODO
+    DECREMENT, //TODO
+
+    EQUAL, //TODO
+    NOTEQUAL, //TODO
+    LESS, //TODO
+    LESSEQ, //TODO
+    GREATER, //TODO
+    GREATEREQ, //TODO
+
+    ARROW, //TODO
+    DOTSTAR, //TODO
+    STARROW, //TODO
+
+    NOT, //TODO
+    AND, //TODO
+    OR, //TODO
+
+    ASSIGN, //TODO
+    ADD_ASSIGN, //TODO
+    SUB_ASSIGN, //TODO
+    MUL_ASSIGN, //TODO
+    DIV_ASSIGN, //TODO
+    MOD_ASSIGN, //TODO
+    LSHIFT_ASSIGN, //TODO
+    RSHIFT_ASSIGN, //TODO
+    BITAND_ASSIGN, //TODO
+    BITOR_ASSIGN, //TODO
+    XOR_ASSIGN, //TODO
+
+    SCOPE, //TODO
 
     OPEN_PAR,
     CLOSE_PAR,
     OPEN_CB,
     CLOSE_CB,
+    OPEN_SB,
+    CLOSE_SB,
 
+    QUESTION, //TODO
+    COLON, //TODO
+    DOT, //TODO
+    COMMA, //TODO
     SEMICOLON
 };
 
