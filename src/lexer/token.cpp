@@ -228,5 +228,8 @@ const char* tokenTypeToString(TokenType type) {
             return "SEMICOLON";
         case TokenType::LITERAL_STRING:
             return "LITERAL_STRING";
+        case TokenType::LITERAL_INTEGER:
+            return "LITERAL_INTEGER";
     }
+    return nullptr;
 }

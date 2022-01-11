@@ -131,13 +131,17 @@ enum class TokenType {
     COMMA,
     SEMICOLON,
 
-    LITERAL_STRING
+    LITERAL_STRING,
+    LITERAL_INTEGER
 };
 
 struct Token {
     TokenType type;
     union {
-
+        struct {
+            size_t type;
+            uint64_t value;
+        } integer;
     };
     std::string_view raw;
     SourceLocation pos;

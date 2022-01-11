@@ -5,6 +5,7 @@
 #include "lexer/filetable.hpp"
 #include "source_location.hpp"
 #include "compile_error.hpp"
+#include "datatype.hpp"
 #include "unicode.hpp"
 
 #include <string_view>
@@ -23,23 +24,28 @@ private:
     size_t token_start_offset;
 
     FileTable& files;
+    DataTypeTable& type_table;
 
     std::vector<CompileError> errors;
 
     int read();
     void unread(size_t = 1);
+
     Token makeToken(TokenType);
+    Token makeIntToken(TokenType, BaseDataType, uint64_t);
+
     void startToken();
     std::string_view tokenString();
     void error(SourceLocation loc, std::string_view msg);
 
     bool isIdChar(int);
-    bool isDigit(int);
+    bool isDigit(int, size_t = 10);
     bool isHexDigit(int);
 
     void consumeLine();
     void consumeMultiline();
 
+    Token lexNumber();
     Token lexId();
     Token lexPlus();
     Token lexMinus();
@@ -58,7 +64,7 @@ private:
     std::optional<CodePoint> lexEscapeSequence();
     Token lexStringLiteral();
 public:
-    Lexer(std::string_view, FileTable&);
+    Lexer(std::string_view, FileTable&, DataTypeTable&);
 
     Token lex();
 

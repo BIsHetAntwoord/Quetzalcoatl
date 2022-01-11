@@ -13,8 +13,9 @@ sources = [
     'src/lexer/filetable.cpp',
     'src/lexer/lexer.cpp',
     'src/lexer/token.cpp',
-    'src/unicode.cpp',
-    'src/main.cpp'
+    'src/datatype.cpp',
+    'src/main.cpp',
+    'src/unicode.cpp'
 ]
 
 executable(

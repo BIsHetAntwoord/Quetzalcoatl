@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <cassert>
 #include <iostream>
+#include <limits>
 
 const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
     {"and", TokenType::AND},
@@ -81,8 +82,9 @@ const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
     {"xor_eq", TokenType::XOR_ASSIGN},
 };
 
-Lexer::Lexer(std::string_view input, FileTable& files) : input(input), input_offset(0),
-        position({1, 0, 0}), token_start_offset(0), files(files) {
+Lexer::Lexer(std::string_view input, FileTable& files, DataTypeTable& type_table) :
+    input(input), input_offset(0), position({1, 0, 0}), token_start_offset(0),
+    files(files), type_table(type_table) {
     this->files.addFile("<unknown>");
 }
 
@@ -106,6 +108,13 @@ Token Lexer::makeToken(TokenType type) {
     return result;
 }
 
+Token Lexer::makeIntToken(TokenType type, BaseDataType base_type, uint64_t value) {
+    Token result = this->makeToken(type);
+    result.integer.type = this->type_table.getBaseTypeId(base_type);
+    result.integer.value = value;
+    return result;
+}
+
 void Lexer::startToken() {
     this->token_start = this->position;
     this->token_start_offset = this->input_offset;
@@ -124,12 +133,18 @@ bool Lexer::isIdChar(int c) {
         (c >= '0' && c <= '9') || (c == '_');
 }
 
-bool Lexer::isDigit(int c) {
-    return (c >= '0' && c <= '9');
+bool Lexer::isDigit(int c, size_t base) {
+    if(c >= '0' && c <= '9')
+        return size_t(c - '0') < base;
+    if(c >= 'a' && c <= 'z')
+        return size_t(c - 'a' + 10) < base;
+    if(c >= 'A' && c <= 'Z')
+        return size_t(c - 'A' + 10) < base;
+    return false;
 }
 
 bool Lexer::isHexDigit(int c) {
-    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'z');
+    return this->isDigit(c, 16);
 }
 
 void Lexer::consumeLine() {
@@ -153,6 +168,86 @@ void Lexer::consumeMultiline() {
     }
 
     this->error(this->position, "unexpected end of file in multiline comment");
+}
+
+Token Lexer::lexNumber() {
+    uint64_t base = 10;
+
+    int lookahead = this->read();
+    if(lookahead == '0') {
+        lookahead = this->read();
+
+        if(lookahead == 'x' || lookahead == 'X')
+            base = 16;
+        else if(lookahead == 'b' || lookahead == 'B')
+            base = 2;
+        else
+            base = 8;
+
+        if(base != 8) {
+            lookahead = this->read();
+            if(!this->isDigit(lookahead, base)) {
+                this->error(this->position, "Invalid sequence after integer base");
+                this->unread();
+                return this->makeIntToken(TokenType::LITERAL_INTEGER, BaseDataType::INT, 0);
+            }
+        }
+    }
+
+    uint64_t value = 0;
+    while(this->isDigit(lookahead, base)) {
+        value *= base;
+
+        if(lookahead >= '0' && lookahead <= '9')
+            value += lookahead - '0';
+        if(lookahead >= 'a' && lookahead <= 'z')
+            value += lookahead - 'a' + 10;
+        if(lookahead >= 'A' && lookahead <= 'Z')
+            value += lookahead - 'A' + 10;
+
+        lookahead = this->read();
+    }
+
+    BaseDataType data_type;
+
+    if(lookahead == 'l' || lookahead == 'L') {
+        lookahead = this->read();
+        if(lookahead == 'u' || lookahead == 'U')
+            data_type = BaseDataType::UNSIGNED_LONG;
+        else {
+            if(value <= std::numeric_limits<int64_t>::max())
+                data_type = BaseDataType::LONG;
+            else
+                data_type = BaseDataType::UNSIGNED_LONG;
+            this->unread();
+        }
+    }
+    else if(lookahead == 'u' || lookahead == 'U') {
+        lookahead = this->read();
+        if(lookahead == 'l' || lookahead == 'L')
+            data_type = BaseDataType::UNSIGNED_LONG;
+        else {
+            if(value <= std::numeric_limits<uint32_t>::max())
+                data_type = BaseDataType::UNSIGNED_INT;
+            else
+                data_type = BaseDataType::UNSIGNED_LONG;
+            this->unread();
+        }
+    }
+    else {
+        this->unread();
+
+        if(value <= std::numeric_limits<int32_t>::max())
+            data_type = BaseDataType::INT;
+        else if(value <= std::numeric_limits<uint32_t>::max() && base != 10)
+            data_type = BaseDataType::UNSIGNED_INT;
+        else if(value <= std::numeric_limits<int64_t>::max() || base == 10)
+            data_type = BaseDataType::LONG;
+        else
+            data_type = BaseDataType::UNSIGNED_LONG;
+    }
+
+    return this->makeIntToken(TokenType::LITERAL_INTEGER, data_type, value);
 }
 
 Token Lexer::lexId() {
@@ -530,6 +625,10 @@ Token Lexer::lex() {
             case '"':
                 return this->lexStringLiteral(); // TODO: L-Strings
             default: {
+                if(this->isDigit(lookahead)) {
+                    this->unread();
+                    return this->lexNumber();
+                }
                 if(this->isIdChar(lookahead) && !this->isDigit(lookahead))
                     return this->lexId();
                 return this->makeToken(TokenType::INVALID);

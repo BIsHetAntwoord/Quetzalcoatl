@@ -17,13 +17,20 @@ int main(int argc, char* argv[]) {
     std::string input_str = ss.str();
 
     FileTable filetab;
-    Lexer lexer(input_str, filetab);
+    DataTypeTable typetab;
+    Lexer lexer(input_str, filetab, typetab);
 
     Token tok;
     do {
         tok = lexer.lex();
 
-        std::cout << tokenTypeToString(tok.type) << " (\"" << tok.raw << "\", " << tok.pos.line
+        std::cout << tokenTypeToString(tok.type) << " (\"" << tok.raw << "\", ";
+
+        if(tok.type == TokenType::LITERAL_INTEGER) {
+            std::cout << "(" << tok.integer.value << ", " << tok.integer.type << "), ";
+        }
+
+        std::cout << tok.pos.line
             << ", " << tok.pos.column << ", " << filetab.getFile(tok.pos.file_id) << ")" << std::endl;
     } while(tok.type != TokenType::EOI);
 
