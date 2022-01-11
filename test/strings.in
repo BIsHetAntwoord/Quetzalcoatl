@@ -1,0 +1,9 @@
+int main() {
+    "oef"
+    "oef auwie"
+    "oef\nauwie"
+    "oef\x00023oei"
+    "\123"
+    "\u1234"
+    "\U0001F40D"
+}

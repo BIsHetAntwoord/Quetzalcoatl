@@ -1,4 +1,5 @@
 #include "lexer/lexer.hpp"
+#include "unicode.hpp"
 
 #include <sstream>
 #include <string>
@@ -82,9 +83,9 @@ const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
     {"xor_eq", TokenType::XOR_ASSIGN},
 };
 
-Lexer::Lexer(std::string_view input, FileTable& files, DataTypeTable& type_table) :
+Lexer::Lexer(std::string_view input, FileTable& files, DataTypeTable& type_table, StringTable& strings) :
     input(input), input_offset(0), position({1, 0, 0}), token_start_offset(0),
-    files(files), type_table(type_table) {
+    files(files), type_table(type_table), strings(strings) {
     this->files.addFile("<unknown>");
 }
 
@@ -442,8 +443,8 @@ std::optional<uint32_t> Lexer::lexEscapeLiteral(uint32_t base, size_t length, bo
         }
 
         uint32_t digit = (c >= '0' && c <= '9') ? c - '0' :
-            (c >= 'a' && c <= 'z') ? c - 'a' + 1 :
-            (c >= 'A' && c <= 'Z') ? c - 'A' + 1 :
+            (c >= 'a' && c <= 'z') ? c - 'a' + 10 :
+            (c >= 'A' && c <= 'Z') ? c - 'A' + 10 :
             base;
 
         if(digit >= base) {
@@ -456,6 +457,7 @@ std::optional<uint32_t> Lexer::lexEscapeLiteral(uint32_t base, size_t length, bo
 
         if ((value != 0 && base > max_value / value) || digit > max_value - value * base) {
             // Overflow
+            std::cout << (char) c << " " << value << " " << (max_value / value)  << std::endl;
             this->unread();
             this->error(this->position, "escape sequence value out of range");
             return std::nullopt;
@@ -467,84 +469,174 @@ std::optional<uint32_t> Lexer::lexEscapeLiteral(uint32_t base, size_t length, bo
     return value;
 }
 
-std::optional<CodePoint> Lexer::lexEscapeSequence() {
+Lexer::Char Lexer::lexEscapeSequence() {
+    constexpr Char invalid = {{}, 0};
+
+    auto loc = this->position;
+    auto utf8 = [loc, this](uint32_t codepoint) {
+        auto cp = CodePoint{codepoint};
+        if (!cp.isValidUtf8())
+            this->error(loc, "invalid universal character constant");
+        Char result;
+        uint8_t i = 0;
+        for (auto c : cp.toUtf8()) {
+            result.bytes[i++] = c;
+        }
+        result.len = i;
+        return result;
+    };
+
+    auto chr = [](uint8_t value) {
+        Char result;
+        result.bytes[0] = value;
+        result.len = 1;
+        return result;
+    };
+
     int c = this->read();
     switch (c) {
         case -1:
             this->error(this->position, "unexpected end of escape sequence");
-            return std::nullopt;
+            return invalid;
         case '\'':
         case '"':
         case '\\':
-            return {{static_cast<uint32_t>(c)}};
+            return chr(c);
         case 'a':
-            return {{'\a'}};
+            return chr('\a');
         case 'b':
-            return {{'\b'}};
+            return chr('\b');
         case 'f':
-            return {{'\f'}};
+            return chr('\f');
         case 'n':
-            return {{'\n'}};
+            return chr('\n');
         case 'r':
-            return {{'\r'}};
+            return chr('\r');
         case 't':
-            return {{'\t'}};
+            return chr('\t');
         case 'v':
-            return {{'\v'}};
+            return chr('\v');
         case 'x': {
             if(auto value = this->lexEscapeLiteral(16, 0, true, 0xFF))
-                return {{value.value()}};
-            return std::nullopt;
+                return utf8(value.value());
+            return invalid;
         }
         case 'u': {
             if(auto value = this->lexEscapeLiteral(16, 4, false))
-                return {{value.value()}};
-            return std::nullopt;
+                return utf8(value.value());
+            return invalid;
         }
         case 'U': {
             if(auto value = this->lexEscapeLiteral(16, 8, false))
-                return {{value.value()}};
-            return std::nullopt;
+                return utf8(value.value());
+            return invalid;
         }
         default:
             if(c >= '0' && c <= '9') {
-                if(auto value = this->lexEscapeLiteral(0, 3, true, 255))
-                    return {{value.value()}};
-                assert(false); // unreachable
+                if(auto value = this->lexEscapeLiteral(8, 3, true, 255))
+                    return chr(value.value());
+                return invalid;
             }
             this->unread();
             this->error(this->position, "invalid escape sequence");
-            return std::nullopt;
+            return invalid;
     }
 }
 
 Token Lexer::lexStringLiteral() {
-    auto ss = std::stringstream();
+    auto str = this->strings.add({});
+
+    auto makeStringToken = [this, str]{
+        auto tok = this->makeToken(TokenType::LITERAL_STRING);
+        tok.string_literal = str;
+        return tok;
+    };
 
     while(true) {
         int c = this->read();
         switch (c) {
             case '"':
-                return this->makeToken(TokenType::LITERAL_STRING);
+                return makeStringToken();
             case '\\': {
-                if(auto cp = this->lexEscapeSequence()) {
-                    ss << cp->toUtf8();
-                    break;
-                }
-                // Attempt to continue parsing even if we encounter an invalid literal.
+                auto chr = this->lexEscapeSequence();
+                if(chr.len == 0)
+                    break; // Continue even if the escape sequence was invalid.
+                for(uint8_t i = 0; i < chr.len; ++i)
+                    this->strings.pushToMostRecent(chr.bytes[i]);
                 break;
             }
             case '\n':
                 this->unread();
                 this->error(this->position, "newline in string literal");
-                return this->makeToken(TokenType::LITERAL_STRING);
+                return makeStringToken();
             case -1:
                 this->error(this->position, "unexpected end of string literal");
-                return this->makeToken(TokenType::LITERAL_STRING);
+                return makeStringToken();
             default:
-                ss.put(c);
+                this->strings.pushToMostRecent(c);
+                break;
         }
     }
+}
+
+Token Lexer::lexCharLiteral() {
+    auto loc = this->position;
+    int c = this->read();
+    uint8_t char_literal = 'b';
+    auto makeCharToken = [this, char_literal]{
+        auto tok = this->makeToken(TokenType::LITERAL_CHAR);
+        tok.char_literal = char_literal;
+        return tok;
+    };
+    switch (c) {
+        case '\'':
+            this->error(loc, "empty character literal");
+            break;
+        case '\\': {
+            auto chr = this->lexEscapeSequence();
+            if(chr.len > 1) {
+                this->error(loc, "character literal too large");
+            }else if(chr.len != 0)
+                char_literal = chr.bytes[0];
+            break;
+        }
+        case '\n':
+            this->unread();
+            this->error(loc, "newline in character literal");
+            return makeCharToken();
+        case -1:
+            this->unread();
+            this->error(loc, "unexpected end of character literal");
+            return makeCharToken();
+        default:
+            char_literal = c;
+            break;
+    }
+
+    loc = this->position;
+    c = this->read();
+    if (c != '\'') {
+        // Attempt to still find a closing quote or newline
+        bool end = false;
+        while (!end) {
+            switch (c) {
+                case '\'':
+                    this->error(loc, "multi-character character literal");
+                    end = true;
+                    break;
+                case -1:
+                case '\n':
+                    this->error(loc, "unterminated character literal");
+                    end = true;
+                    break;
+                default:
+                    c = this->read();
+                    continue;
+            }
+        }
+    }
+
+    return makeCharToken();
 }
 
 Token Lexer::lex() {
@@ -624,6 +716,8 @@ Token Lexer::lex() {
             }
             case '"':
                 return this->lexStringLiteral(); // TODO: L-Strings
+            case '\'':
+                return this->lexCharLiteral(); // TODO: L-Chars
             default: {
                 if(this->isDigit(lookahead)) {
                     this->unread();

@@ -11,6 +11,7 @@ project(
 # Final executable
 sources = [
     'src/lexer/filetable.cpp',
+    'src/lexer/stringtable.cpp',
     'src/lexer/lexer.cpp',
     'src/lexer/token.cpp',
     'src/datatype.cpp',

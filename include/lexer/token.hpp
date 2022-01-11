@@ -5,6 +5,8 @@
 
 #include <string_view>
 #include <string>
+#include <cstddef>
+#include <cstdint>
 
 enum class TokenType {
     INVALID,
@@ -132,7 +134,8 @@ enum class TokenType {
     SEMICOLON,
 
     LITERAL_STRING,
-    LITERAL_INTEGER
+    LITERAL_INTEGER,
+    LITERAL_CHAR
 };
 
 struct Token {
@@ -142,6 +145,8 @@ struct Token {
             size_t type;
             uint64_t value;
         } integer;
+        size_t string_literal;
+        uint8_t char_literal;
     };
     std::string_view raw;
     SourceLocation pos;

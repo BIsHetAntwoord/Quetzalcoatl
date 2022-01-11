@@ -3,10 +3,10 @@
 
 #include "lexer/token.hpp"
 #include "lexer/filetable.hpp"
+#include "lexer/stringtable.hpp"
 #include "source_location.hpp"
 #include "compile_error.hpp"
 #include "datatype.hpp"
-#include "unicode.hpp"
 
 #include <string_view>
 #include <vector>
@@ -16,6 +16,11 @@
 
 class Lexer {
 private:
+    struct Char {
+        uint8_t bytes[4];
+        uint8_t len; // 0 is invalid
+    };
+
     std::string_view input;
     size_t input_offset;
 
@@ -25,6 +30,7 @@ private:
 
     FileTable& files;
     DataTypeTable& type_table;
+    StringTable& strings;
 
     std::vector<CompileError> errors;
 
@@ -61,10 +67,11 @@ private:
     Token lexDot();
     Token lexColon();
     std::optional<uint32_t> lexEscapeLiteral(uint32_t base, size_t length, bool allow_shorter, uint32_t max_value = 0xFFFFFFFF);
-    std::optional<CodePoint> lexEscapeSequence();
+    Char lexEscapeSequence();
     Token lexStringLiteral();
+    Token lexCharLiteral();
 public:
-    Lexer(std::string_view, FileTable&, DataTypeTable&);
+    Lexer(std::string_view, FileTable&, DataTypeTable&, StringTable&);
 
     Token lex();
 

@@ -230,6 +230,8 @@ const char* tokenTypeToString(TokenType type) {
             return "LITERAL_STRING";
         case TokenType::LITERAL_INTEGER:
             return "LITERAL_INTEGER";
+        case TokenType::LITERAL_CHAR:
+            return "LITERAL_CHAR";
     }
     return nullptr;
 }

@@ -1,5 +1,6 @@
 #include "lexer/lexer.hpp"
 #include "lexer/filetable.hpp"
+#include "lexer/stringtable.hpp"
 #include "unicode.hpp"
 
 #include <iostream>
@@ -18,7 +19,8 @@ int main(int argc, char* argv[]) {
 
     FileTable filetab;
     DataTypeTable typetab;
-    Lexer lexer(input_str, filetab, typetab);
+    StringTable strtab;
+    Lexer lexer(input_str, filetab, typetab, strtab);
 
     Token tok;
     do {
