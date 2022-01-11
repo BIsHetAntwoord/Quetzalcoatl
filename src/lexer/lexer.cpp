@@ -626,6 +626,7 @@ Token Lexer::lexCharLiteral() {
                     break;
                 case -1:
                 case '\n':
+                    this->unread();
                     this->error(loc, "unterminated character literal");
                     end = true;
                     break;
@@ -715,9 +716,20 @@ Token Lexer::lex() {
                 break;
             }
             case '"':
-                return this->lexStringLiteral(); // TODO: L-Strings
+                return this->lexStringLiteral();
             case '\'':
-                return this->lexCharLiteral(); // TODO: L-Chars
+                return this->lexCharLiteral();
+            case 'L': {
+                switch (this->read()) {
+                    case '"':
+                        return this->lexStringLiteral();
+                    case '\'':
+                        return this->lexCharLiteral();
+                    default:
+                        this->unread();
+                        return this->lexId();
+                }
+            }
             default: {
                 if(this->isDigit(lookahead)) {
                     this->unread();
