@@ -501,6 +501,7 @@ Lexer::Char Lexer::lexEscapeSequence() {
         case '\'':
         case '"':
         case '\\':
+        case '?':
             return chr(c);
         case 'a':
             return chr('\a');
