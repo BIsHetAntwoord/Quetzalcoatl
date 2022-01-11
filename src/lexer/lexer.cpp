@@ -134,10 +134,12 @@ Token Lexer::lexId() {
 }
 
 Token Lexer::lex() {
-    this->startToken();
-    int lookahead = this->read();
-    while(lookahead != -1) {
+    while(true) {
+        this->startToken();
+        int lookahead = this->read();
         switch(lookahead) {
+            case -1:
+                return this->makeToken(TokenType::EOI);
             case ' ':
             case '\t':
             case '\r':
@@ -162,9 +164,5 @@ Token Lexer::lex() {
                 return this->makeToken(TokenType::INVALID);
             }
         }
-
-        this->startToken();
-        lookahead = this->read();
     }
-    return this->makeToken(TokenType::EOI);
 }
