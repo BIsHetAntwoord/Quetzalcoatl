@@ -115,9 +115,8 @@ std::string_view Lexer::tokenString() {
     return this->input.substr(this->token_start_offset, this->input_offset - this->token_start_offset);
 }
 
-Token Lexer::error(SourceLocation loc, std::string_view msg) {
+void Lexer::error(SourceLocation loc, std::string_view msg) {
     this->errors.emplace_back(loc, msg);
-    return this->makeToken(TokenType::INVALID);
 }
 
 bool Lexer::isIdChar(int c) {
@@ -442,9 +441,11 @@ Token Lexer::lexStringLiteral() {
             }
             case '\n':
                 this->unread();
-                return this->error(this->position, "newline in string literal");
+                this->error(this->position, "newline in string literal");
+                return this->makeToken(TokenType::LITERAL_STRING);
             case -1:
-                return this->error(this->position, "unexpected end of string literal");
+                this->error(this->position, "unexpected end of string literal");
+                return this->makeToken(TokenType::LITERAL_STRING);
             default:
                 ss.put(c);
         }

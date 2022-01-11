@@ -31,7 +31,7 @@ private:
     Token makeToken(TokenType);
     void startToken();
     std::string_view tokenString();
-    Token error(SourceLocation loc, std::string_view msg);
+    void error(SourceLocation loc, std::string_view msg);
 
     bool isIdChar(int);
     bool isDigit(int);
