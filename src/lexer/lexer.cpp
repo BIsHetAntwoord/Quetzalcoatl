@@ -337,7 +337,7 @@ Token Lexer::lexColon() {
     return this->makeToken(TokenType::COLON);
 }
 
-std::optional<uint32_t> Lexer::lexEscapeLiteral(int base, size_t length, bool allow_shorter, uint32_t max_value) {
+std::optional<uint32_t> Lexer::lexEscapeLiteral(uint32_t base, size_t length, bool allow_shorter, uint32_t max_value) {
     uint32_t value = 0;
     for(size_t i = 0; length == 0 || i < length; ++i) {
         int c = this->read();
