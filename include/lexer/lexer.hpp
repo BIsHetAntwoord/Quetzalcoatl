@@ -27,6 +27,20 @@ private:
     bool isDigit(int);
 
     Token lexId();
+    Token lexPlus();
+    Token lexMinus();
+    Token lexStar();
+    Token lexDiv();
+    Token lexMod();
+    Token lexLt();
+    Token lexGt();
+    Token lexAnd();
+    Token lexOr();
+    Token lexXor();
+    Token lexAssign();
+    Token lexNot();
+    Token lexDot();
+    Token lexColon();
 public:
     Lexer(const std::string_view&, FileTable&);
 

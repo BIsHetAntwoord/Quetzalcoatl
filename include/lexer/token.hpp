@@ -71,49 +71,49 @@ enum class TokenType {
 
     ID,
 
-    PLUS, //TODO
-    MINUS, //TODO
-    STAR, //TODO
-    DIV, //TODO
-    MOD, //TODO
-    LSHIFT, //TODO
-    RSHIFT, //TODO
-    BITAND, //TODO
-    BITOR, //TODO
-    XOR, //TODO
-    BITNOT, //TODO
+    PLUS,
+    MINUS,
+    STAR,
+    DIV,
+    MOD,
+    LSHIFT,
+    RSHIFT,
+    BITAND,
+    BITOR,
+    XOR,
+    BITNOT,
 
-    INCREMENT, //TODO
-    DECREMENT, //TODO
+    INCREMENT,
+    DECREMENT,
 
-    EQUAL, //TODO
-    NOTEQUAL, //TODO
-    LESS, //TODO
-    LESSEQ, //TODO
-    GREATER, //TODO
-    GREATEREQ, //TODO
+    EQUAL,
+    NOTEQUAL,
+    LESS,
+    LESSEQ,
+    GREATER,
+    GREATEREQ,
 
-    ARROW, //TODO
-    DOTSTAR, //TODO
-    STARROW, //TODO
+    ARROW,
+    DOTSTAR,
+    STARROW,
 
-    NOT, //TODO
-    AND, //TODO
-    OR, //TODO
+    NOT,
+    AND,
+    OR,
 
-    ASSIGN, //TODO
-    ADD_ASSIGN, //TODO
-    SUB_ASSIGN, //TODO
-    MUL_ASSIGN, //TODO
-    DIV_ASSIGN, //TODO
-    MOD_ASSIGN, //TODO
-    LSHIFT_ASSIGN, //TODO
-    RSHIFT_ASSIGN, //TODO
-    BITAND_ASSIGN, //TODO
-    BITOR_ASSIGN, //TODO
-    XOR_ASSIGN, //TODO
+    ASSIGN,
+    ADD_ASSIGN,
+    SUB_ASSIGN,
+    MUL_ASSIGN,
+    DIV_ASSIGN,
+    MOD_ASSIGN,
+    LSHIFT_ASSIGN,
+    RSHIFT_ASSIGN,
+    BITAND_ASSIGN,
+    BITOR_ASSIGN,
+    XOR_ASSIGN,
 
-    SCOPE, //TODO
+    SCOPE,
 
     OPEN_PAR,
     CLOSE_PAR,
@@ -122,10 +122,10 @@ enum class TokenType {
     OPEN_SB,
     CLOSE_SB,
 
-    QUESTION, //TODO
-    COLON, //TODO
-    DOT, //TODO
-    COMMA, //TODO
+    QUESTION,
+    COLON,
+    DOT,
+    COMMA,
     SEMICOLON
 };
 

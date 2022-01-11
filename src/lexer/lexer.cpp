@@ -133,6 +133,185 @@ Token Lexer::lexId() {
         return this->makeToken(TokenType::ID);
 }
 
+Token Lexer::lexPlus() {
+    int lookahead = this->read();
+
+    switch(lookahead) {
+        case '+':
+            return this->makeToken(TokenType::INCREMENT);
+        case '=':
+            return this->makeToken(TokenType::ADD_ASSIGN);
+    }
+
+    this->unread();
+    return this->makeToken(TokenType::PLUS);
+}
+
+Token Lexer::lexMinus() {
+    int lookahead = this->read();
+
+    switch(lookahead) {
+        case '>': {
+            lookahead = this->read();
+            if(lookahead == '*')
+                return this->makeToken(TokenType::STARROW);
+            this->unread();
+            return this->makeToken(TokenType::ARROW);
+        }
+        case '-':
+            return this->makeToken(TokenType::DECREMENT);
+        case '=':
+            return this->makeToken(TokenType::SUB_ASSIGN);
+    }
+
+    this->unread();
+    return this->makeToken(TokenType::MINUS);
+}
+
+Token Lexer::lexStar() {
+    int lookahead = this->read();
+
+    if(lookahead == '=')
+        return this->makeToken(TokenType::MUL_ASSIGN);
+
+    this->unread();
+    return this->makeToken(TokenType::STAR);
+}
+
+Token Lexer::lexDiv() {
+    int lookahead = this->read();
+
+    if(lookahead == '=')
+        return this->makeToken(TokenType::DIV_ASSIGN);
+
+    this->unread();
+    return this->makeToken(TokenType::DIV);
+}
+
+Token Lexer::lexMod() {
+    int lookahead = this->read();
+
+    if(lookahead == '=')
+        return this->makeToken(TokenType::MOD_ASSIGN);
+
+    this->unread();
+    return this->makeToken(TokenType::MOD);
+}
+
+Token Lexer::lexLt() {
+    int lookahead = this->read();
+
+    switch(lookahead) {
+        case '<': {
+            lookahead = this->read();
+            if(lookahead == '=')
+                return this->makeToken(TokenType::LSHIFT_ASSIGN);
+            this->unread();
+            return this->makeToken(TokenType::LSHIFT);
+        }
+        case '=':
+            return this->makeToken(TokenType::LESSEQ);
+    }
+
+    this->unread();
+    return this->makeToken(TokenType::LESS);
+}
+
+Token Lexer::lexGt() {
+    int lookahead = this->read();
+
+    switch(lookahead) {
+        case '>': {
+            lookahead = this->read();
+            if(lookahead == '=')
+                return this->makeToken(TokenType::RSHIFT_ASSIGN);
+            this->unread();
+            return this->makeToken(TokenType::RSHIFT);
+        }
+        case '=':
+            return this->makeToken(TokenType::GREATEREQ);
+    }
+
+    this->unread();
+    return this->makeToken(TokenType::GREATER);
+}
+
+Token Lexer::lexAnd() {
+    int lookahead = this->read();
+
+    switch(lookahead) {
+        case '&':
+            return this->makeToken(TokenType::AND);
+        case '=':
+            return this->makeToken(TokenType::BITAND_ASSIGN);
+    }
+
+    this->unread();
+    return this->makeToken(TokenType::BITAND);
+}
+
+Token Lexer::lexOr() {
+    int lookahead = this->read();
+
+    switch(lookahead) {
+        case '|':
+            return this->makeToken(TokenType::OR);
+        case '=':
+            return this->makeToken(TokenType::BITOR_ASSIGN);
+    }
+
+    this->unread();
+    return this->makeToken(TokenType::BITOR);
+}
+
+Token Lexer::lexXor() {
+    int lookahead = this->read();
+
+    if(lookahead == '=')
+        return this->makeToken(TokenType::XOR_ASSIGN);
+
+    this->unread();
+    return this->makeToken(TokenType::XOR);
+}
+
+Token Lexer::lexAssign() {
+    int lookahead = this->read();
+
+    if(lookahead == '=')
+        return this->makeToken(TokenType::EQUAL);
+
+    this->unread();
+    return this->makeToken(TokenType::ASSIGN);
+}
+
+Token Lexer::lexNot() {
+    int lookahead = this->read();
+
+    if(lookahead == '=')
+        return this->makeToken(TokenType::NOTEQUAL);
+
+    this->unread();
+    return this->makeToken(TokenType::NOT);
+}
+
+Token Lexer::lexDot() {
+    int lookahead = this->read();
+    if(lookahead == '*')
+        return this->makeToken(TokenType::DOTSTAR);
+
+    this->unread();
+    return this->makeToken(TokenType::DOT);
+}
+
+Token Lexer::lexColon() {
+    int lookahead = this->read();
+    if(lookahead == ':')
+        return this->makeToken(TokenType::SCOPE);
+
+    this->unread();
+    return this->makeToken(TokenType::COLON);
+}
+
 Token Lexer::lex() {
     while(true) {
         this->startToken();
@@ -148,6 +327,36 @@ Token Lexer::lex() {
                 ++this->position.line;
                 this->position.offset = 0;
                 break;
+            case '+':
+                return this->lexPlus();
+            case '-':
+                return this->lexMinus();
+            case '*':
+                return this->lexStar();
+            case '/':
+                return this->lexDiv();
+            case '%':
+                return this->lexMod();
+            case '<':
+                return this->lexLt();
+            case '>':
+                return this->lexGt();
+            case '&':
+                return this->lexAnd();
+            case '|':
+                return this->lexOr();
+            case '^':
+                return this->lexXor();
+            case '=':
+                return this->lexAssign();
+            case '!':
+                return this->lexNot();
+            case '.':
+                return this->lexDot();
+            case ':':
+                return this->lexColon();
+            case '~':
+                return this->makeToken(TokenType::BITNOT);
             case '{':
                 return this->makeToken(TokenType::OPEN_CB);
             case '}':
@@ -158,6 +367,10 @@ Token Lexer::lex() {
                 return this->makeToken(TokenType::CLOSE_PAR);
             case ';':
                 return this->makeToken(TokenType::SEMICOLON);
+            case ',':
+                return this->makeToken(TokenType::COMMA);
+            case '?':
+                return this->makeToken(TokenType::QUESTION);
             default: {
                 if(this->isIdChar(lookahead) && !this->isDigit(lookahead))
                     return this->lexId();
