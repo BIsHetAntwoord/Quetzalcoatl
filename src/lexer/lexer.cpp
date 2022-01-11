@@ -140,13 +140,13 @@ void Lexer::consumeLine() {
     this->unread();
 }
 
-std::optional<Token> Lexer::consumeMultiline() {
+void Lexer::consumeMultiline() {
     int lookahead = this->read();
     while(lookahead != -1) {
         if(lookahead == '*') {
             lookahead = this->read();
             if(lookahead == '/')
-                return std::nullopt;
+                return;
         }
 
         if(lookahead != -1)
@@ -154,8 +154,6 @@ std::optional<Token> Lexer::consumeMultiline() {
     }
 
     this->error(this->position, "unexpected end of file in multiline comment");
-    this->startToken();
-    return this->makeToken(TokenType::EOI);
 }
 
 Token Lexer::lexId() {

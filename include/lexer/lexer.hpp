@@ -38,7 +38,7 @@ private:
     bool isHexDigit(int);
 
     void consumeLine();
-    std::optional<Token> consumeMultiline();
+    void consumeMultiline();
 
     Token lexId();
     Token lexPlus();
