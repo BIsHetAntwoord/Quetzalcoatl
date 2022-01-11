@@ -3,6 +3,6 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     /*int result = strtoull(argv[1], nullptr, 10);
     //std::cout << (result ? (result + 1) : (result--)) << std::endl;*/
-    "oef auwie\n"
+    "oef auwie\x0"
     return EXIT_SUCCESS;
 }

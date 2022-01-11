@@ -3,6 +3,8 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <cassert>
+#include <iostream>
 
 const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
     {"and", TokenType::AND},
@@ -125,6 +127,10 @@ bool Lexer::isIdChar(int c) {
 
 bool Lexer::isDigit(int c) {
     return (c >= '0' && c <= '9');
+}
+
+bool Lexer::isHexDigit(int c) {
+    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'z');
 }
 
 void Lexer::consumeLine() {
@@ -334,12 +340,46 @@ Token Lexer::lexColon() {
     return this->makeToken(TokenType::COLON);
 }
 
+std::optional<uint32_t> Lexer::lexEscapeLiteral(int base, size_t length, bool allow_shorter, uint32_t max_value) {
+    uint32_t value = 0;
+    for(size_t i = 0; length == 0 || i < length; ++i) {
+        int c = this->read();
+        if(c < 0) {
+            this->error(this->position, "unexpected end of input");
+            return std::nullopt;
+        }
+
+        uint32_t digit = (c >= '0' && c <= '9') ? c - '0' :
+            (c >= 'a' && c <= 'z') ? c - 'a' + 1 :
+            (c >= 'A' && c <= 'Z') ? c - 'A' + 1 :
+            base;
+
+        if(digit >= base) {
+            this->unread();
+            if(allow_shorter && i > 0)
+                return value;
+            this->error(this->position, "invalid escape sequence value");
+            return std::nullopt;
+        }
+
+        if ((value != 0 && base > max_value / value) || digit > max_value - value * base) {
+            // Overflow
+            this->unread();
+            this->error(this->position, "escape sequence value out of range");
+            return std::nullopt;
+        }
+
+        value = value * base + digit;
+    }
+
+    return value;
+}
+
 std::optional<CodePoint> Lexer::lexEscapeSequence() {
-    auto loc = this->position;
     int c = this->read();
     switch (c) {
         case -1:
-            this->error(loc, "unexpected end of escape sequence");
+            this->error(this->position, "unexpected end of escape sequence");
             return std::nullopt;
         case '\'':
         case '"':
@@ -359,9 +399,29 @@ std::optional<CodePoint> Lexer::lexEscapeSequence() {
             return {{'\t'}};
         case 'v':
             return {{'\v'}};
-        // TODO: The other escape sequences
+        case 'x': {
+            if(auto value = this->lexEscapeLiteral(16, 0, true, 0xFF))
+                return {{value.value()}};
+            return std::nullopt;
+        }
+        case 'u': {
+            if(auto value = this->lexEscapeLiteral(16, 4, false))
+                return {{value.value()}};
+            return std::nullopt;
+        }
+        case 'U': {
+            if(auto value = this->lexEscapeLiteral(16, 8, false))
+                return {{value.value()}};
+            return std::nullopt;
+        }
         default:
-            this->error(loc, "invalid escape sequence");
+            if(c >= '0' && c <= '9') {
+                if(auto value = this->lexEscapeLiteral(0, 3, true, 255))
+                    return {{value.value()}};
+                assert(false); // unreachable
+            }
+            this->unread();
+            this->error(this->position, "invalid escape sequence");
             return std::nullopt;
     }
 }
@@ -370,7 +430,6 @@ Token Lexer::lexStringLiteral() {
     auto ss = std::stringstream();
 
     while(true) {
-        auto loc = this->position;
         int c = this->read();
         switch (c) {
             case '"':
@@ -380,12 +439,14 @@ Token Lexer::lexStringLiteral() {
                     ss << cp->toUtf8();
                     break;
                 }
-                return this->makeToken(TokenType::INVALID);
+                // Attempt to continue parsing even if we encounter an invalid literal.
+                break;
             }
             case '\n':
-                return this->error(loc, "newline in string literal");
+                this->unread();
+                return this->error(this->position, "newline in string literal");
             case -1:
-                return this->error(loc, "unexpected end of string literal");
+                return this->error(this->position, "unexpected end of string literal");
             default:
                 ss.put(c);
         }
@@ -459,10 +520,8 @@ Token Lexer::lex() {
                     return this->makeToken(TokenType::DIV_ASSIGN);
                 else if(lookahead == '/')
                     this->consumeLine();
-                else if(lookahead == '*') {
-                    if(auto tok = this->consumeMultiline())
-                        return tok.value();
-                }
+                else if(lookahead == '*')
+                   this->consumeMultiline();
                 else {
                     this->unread();
                     return this->makeToken(TokenType::DIV);

@@ -35,6 +35,7 @@ private:
 
     bool isIdChar(int);
     bool isDigit(int);
+    bool isHexDigit(int);
 
     void consumeLine();
     std::optional<Token> consumeMultiline();
@@ -53,7 +54,7 @@ private:
     Token lexNot();
     Token lexDot();
     Token lexColon();
-
+    std::optional<uint32_t> lexEscapeLiteral(int base, size_t length, bool allow_shorter, uint32_t max_value = 0xFFFFFFFF);
     std::optional<CodePoint> lexEscapeSequence();
     Token lexStringLiteral();
 public:
