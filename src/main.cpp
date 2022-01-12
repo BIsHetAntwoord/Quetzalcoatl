@@ -1,6 +1,6 @@
 #include "lexer/lexer.hpp"
-#include "lexer/filetable.hpp"
-#include "lexer/stringtable.hpp"
+#include "frontend/filetable.hpp"
+#include "frontend/stringtable.hpp"
 #include "unicode.hpp"
 
 #include <iostream>
@@ -17,10 +17,8 @@ int main(int argc, char* argv[]) {
 
     std::string input_str = ss.str();
 
-    FileTable filetab;
-    DataTypeTable typetab;
-    StringTable strtab;
-    Lexer lexer(input_str, filetab, typetab, strtab);
+    CompileInfo compile_info;
+    Lexer lexer(input_str, compile_info);
 
     Token tok;
     do {
@@ -33,7 +31,7 @@ int main(int argc, char* argv[]) {
         }
 
         std::cout << tok.pos.line
-            << ", " << tok.pos.column << ", " << filetab.getFile(tok.pos.file_id) << ")" << std::endl;
+            << ", " << tok.pos.column << ", " << compile_info.files.getFile(tok.pos.file_id) << ")" << std::endl;
     } while(tok.type != TokenType::EOI);
 
     for (auto e : lexer.compileErrors()) {

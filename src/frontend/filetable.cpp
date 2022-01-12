@@ -1,4 +1,4 @@
-#include "lexer/filetable.hpp"
+#include "frontend/filetable.hpp"
 
 size_t FileTable::addFile(std::string_view filename) {
     if(this->index_lookup.count(filename) > 0)

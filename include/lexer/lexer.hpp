@@ -2,11 +2,9 @@
 #define _QUETZALCOATL_LEXER_LEXER_HPP
 
 #include "lexer/token.hpp"
-#include "lexer/filetable.hpp"
-#include "lexer/stringtable.hpp"
-#include "source_location.hpp"
+#include "frontend/compile_info.hpp"
+#include "frontend/source_location.hpp"
 #include "compile_error.hpp"
-#include "datatype.hpp"
 
 #include <string_view>
 #include <vector>
@@ -28,9 +26,7 @@ private:
     SourceLocation token_start;
     size_t token_start_offset;
 
-    FileTable& files;
-    DataTypeTable& type_table;
-    StringTable& strings;
+    CompileInfo& compile_info;
 
     std::vector<CompileError> errors;
 
@@ -71,7 +67,7 @@ private:
     Token lexStringLiteral();
     Token lexCharLiteral();
 public:
-    Lexer(std::string_view, FileTable&, DataTypeTable&, StringTable&);
+    Lexer(std::string_view, CompileInfo&);
 
     Token lex();
 

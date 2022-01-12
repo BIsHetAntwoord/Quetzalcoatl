@@ -1,7 +1,7 @@
 #ifndef _QUETZALCOATL_LEXER_TOKEN_HPP
 #define _QUETZALCOATL_LEXER_TOKEN_HPP
 
-#include "source_location.hpp"
+#include "frontend/source_location.hpp"
 
 #include <string_view>
 #include <string>

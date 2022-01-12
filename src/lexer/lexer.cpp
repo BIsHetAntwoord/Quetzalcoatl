@@ -83,10 +83,10 @@ const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
     {"xor_eq", TokenType::XOR_ASSIGN},
 };
 
-Lexer::Lexer(std::string_view input, FileTable& files, DataTypeTable& type_table, StringTable& strings) :
+Lexer::Lexer(std::string_view input, CompileInfo& compile_info) :
     input(input), input_offset(0), position({1, 0, 0}), token_start_offset(0),
-    files(files), type_table(type_table), strings(strings) {
-    this->files.addFile("<unknown>");
+    compile_info(compile_info) {
+    this->compile_info.files.addFile("<unknown>");
 }
 
 int Lexer::read() {
@@ -111,7 +111,7 @@ Token Lexer::makeToken(TokenType type) {
 
 Token Lexer::makeIntToken(TokenType type, BaseDataType base_type, uint64_t value) {
     Token result = this->makeToken(type);
-    result.integer.type = this->type_table.getBaseTypeId(base_type);
+    result.integer.type = this->compile_info.types.getBaseTypeId(base_type);
     result.integer.value = value;
     return result;
 }
@@ -545,7 +545,7 @@ Lexer::Char Lexer::lexEscapeSequence() {
 }
 
 Token Lexer::lexStringLiteral() {
-    auto str = this->strings.add({});
+    auto str = this->compile_info.strings.add({});
 
     auto makeStringToken = [this, str]{
         auto tok = this->makeToken(TokenType::LITERAL_STRING);
@@ -563,7 +563,7 @@ Token Lexer::lexStringLiteral() {
                 if(chr.len == 0)
                     break; // Continue even if the escape sequence was invalid.
                 for(uint8_t i = 0; i < chr.len; ++i)
-                    this->strings.pushToMostRecent(chr.bytes[i]);
+                    this->compile_info.strings.pushToMostRecent(chr.bytes[i]);
                 break;
             }
             case '\n':
@@ -574,7 +574,7 @@ Token Lexer::lexStringLiteral() {
                 this->error(this->position, "unexpected end of string literal");
                 return makeStringToken();
             default:
-                this->strings.pushToMostRecent(c);
+                this->compile_info.strings.pushToMostRecent(c);
                 break;
         }
     }

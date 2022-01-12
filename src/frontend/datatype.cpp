@@ -1,4 +1,4 @@
-#include "datatype.hpp"
+#include "frontend/datatype.hpp"
 
 DataTypeTable::DataTypeTable() {
     for(size_t i = 0; i <= size_t(BaseDataType::DOUBLE); ++i) {

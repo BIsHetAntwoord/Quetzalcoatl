@@ -1,4 +1,4 @@
-#include "lexer/stringtable.hpp"
+#include "frontend/stringtable.hpp"
 
 size_t StringTable::add(View str) {
     size_t offset = this->string_bytes.size();
