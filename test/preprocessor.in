@@ -2,5 +2,15 @@
 # 0 "<ingebouwd>"
 # 0 "<opdrachtregel>"
 # 1 "preprocessor.cpp"
+# 1 "preprocessor.hpp" 1
+
+
+
+inline int een_func() {
+    return 0;
+}
+# 2 "preprocessor.cpp" 2
+
 int main() {
+    return een_func();
 }
