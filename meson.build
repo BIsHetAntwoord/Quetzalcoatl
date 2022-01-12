@@ -18,6 +18,7 @@ sources = [
     'src/frontend/compile_info.cpp',
     'src/lexer/lexer.cpp',
     'src/lexer/token.cpp',
+    'src/parser/parser.cpp',
     'src/main.cpp',
     'src/unicode.cpp',
 ]

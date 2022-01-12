@@ -1,4 +1,5 @@
 #include "lexer/lexer.hpp"
+#include "parser/parser.hpp"
 #include "frontend/filetable.hpp"
 #include "frontend/stringtable.hpp"
 #include "frontend/ast.hpp"
@@ -8,6 +9,31 @@
 #include <fstream>
 #include <sstream>
 #include <bitset>
+
+void print_tree(AstTable& ast, size_t node, size_t indent = 0) {
+    auto print_indent = [&]() {
+        for(size_t i = 0; i < indent; ++i) {
+            std::cout << "  ";
+        }
+    };
+
+    auto& node_info = ast.getNode(node);
+
+    print_indent();
+    std::cout << "Node " << node << ":" << std::endl;
+    ++indent;
+    print_indent();
+    std::cout << "type: " << size_t(node_info.type) << std::endl;
+
+    if(node_info.children.size() > 0) {
+        print_indent();
+        std::cout << "children:" << std::endl;
+
+        for(size_t i : node_info.children) {
+            print_tree(ast, i, indent+1);
+        }
+    }
+}
 
 int main(int argc, char* argv[]) {
     if(argc < 2)
@@ -21,19 +47,11 @@ int main(int argc, char* argv[]) {
     CompileInfo compile_info;
     Lexer lexer(input_str, compile_info);
 
-    Token tok;
-    do {
-        tok = lexer.lex();
+    AstTable ast;
+    Parser parser(lexer, compile_info, ast);
 
-        std::cout << tokenTypeToString(tok.type) << " (\"" << tok.raw << "\", ";
-
-        if(tok.type == TokenType::LITERAL_INTEGER) {
-            std::cout << "(" << tok.integer.value << ", " << tok.integer.type << "), ";
-        }
-
-        std::cout << tok.pos.line
-            << ", " << tok.pos.column << ", " << compile_info.files.getFile(tok.pos.file_id) << ")" << std::endl;
-    } while(tok.type != TokenType::EOI);
+    size_t root_node = parser.parse();
+    print_tree(ast, root_node);
 
     compile_info.printDiagnostics(std::cout, true);
     return 0;
