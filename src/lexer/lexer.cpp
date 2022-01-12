@@ -90,9 +90,11 @@ Lexer::Lexer(std::string_view input, CompileInfo& compile_info) :
 }
 
 int Lexer::read() {
-    if(this->input_offset >= this->input.size())
-        return -1;
     ++this->position.column;
+    if(this->input_offset >= this->input.size()) {
+        ++this->input_offset;
+        return -1;
+    }
     return (unsigned)this->input[this->input_offset++];
 }
 

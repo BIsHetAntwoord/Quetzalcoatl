@@ -5,6 +5,8 @@
 #include <cstddef>
 
 enum class BaseDataType {
+    INVALID,
+
     VOID,
     CHAR,
     UNSIGNED_CHAR,

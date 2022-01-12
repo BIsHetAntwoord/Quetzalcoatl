@@ -24,6 +24,17 @@ void print_tree(AstTable& ast, size_t node, size_t indent = 0) {
     ++indent;
     print_indent();
     std::cout << "type: " << size_t(node_info.type) << std::endl;
+    print_indent();
+    std::cout << "datatype: " << node_info.datatype << std::endl;
+
+    switch(node_info.type) {
+        case AstNodeType::INTEGER_CONSTANT:
+            print_indent();
+            std::cout << "integer: " << node_info.integer << std::endl;
+            break;
+        default:
+            break;
+    }
 
     if(node_info.children.size() > 0) {
         print_indent();
@@ -51,7 +62,8 @@ int main(int argc, char* argv[]) {
     Parser parser(lexer, compile_info, ast);
 
     size_t root_node = parser.parse();
-    print_tree(ast, root_node);
+    if(root_node != INVALID_ASTNODE_ID)
+        print_tree(ast, root_node);
 
     compile_info.printDiagnostics(std::cout, true);
     return 0;
