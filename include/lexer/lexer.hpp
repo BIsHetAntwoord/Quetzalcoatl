@@ -4,11 +4,9 @@
 #include "lexer/token.hpp"
 #include "frontend/compile_info.hpp"
 #include "frontend/source_location.hpp"
-#include "compile_error.hpp"
 
 #include <string_view>
 #include <vector>
-#include <span>
 #include <optional>
 #include <cstdint>
 
@@ -38,7 +36,6 @@ private:
 
     void startToken();
     std::string_view tokenString();
-    void error(SourceLocation loc, std::string_view msg);
 
     bool isIdChar(int);
     bool isDigit(int, size_t = 10);

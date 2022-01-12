@@ -2,18 +2,20 @@
 #define _QUETZALCOATL_FRONTEND_COMPILE_INFO_HPP
 
 #include <vector>
+#include <iosfwd>
 
 #include "frontend/datatype.hpp"
 #include "frontend/filetable.hpp"
 #include "frontend/stringtable.hpp"
-#include "compile_error.hpp"
+#include "frontend/diagnostics.hpp"
 
 struct CompileInfo {
     FileTable files;
     DataTypeTable types;
     StringTable strings;
+    Diagnostics diagnostics;
 
-    std::vector<CompileError> errors;
+    void printDiagnostics(std::ostream& out, bool want_color) const; 
 };
 
 #endif

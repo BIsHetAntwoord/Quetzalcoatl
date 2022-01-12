@@ -34,10 +34,6 @@ int main(int argc, char* argv[]) {
             << ", " << tok.pos.column << ", " << compile_info.files.getFile(tok.pos.file_id) << ")" << std::endl;
     } while(tok.type != TokenType::EOI);
 
-    for (auto e : compile_info.errors) {
-        auto filename = compile_info.files.getFile(e.loc.file_id);
-        std::cout << "error at " << filename << ":" << e.loc.line << ":" << e.loc.column << ": " << e.msg << '\n';
-    }
-
+    compile_info.printDiagnostics(std::cout, true);
     return 0;
 }

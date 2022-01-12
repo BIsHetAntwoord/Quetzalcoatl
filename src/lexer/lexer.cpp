@@ -127,10 +127,6 @@ std::string_view Lexer::tokenString() {
     return this->input.substr(this->token_start_offset, this->input_offset - this->token_start_offset);
 }
 
-void Lexer::error(SourceLocation loc, std::string_view msg) {
-    this->compile_info.errors.emplace_back(loc, msg);
-}
-
 bool Lexer::isIdChar(int c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
         (c >= '0' && c <= '9') || (c == '_');
@@ -174,7 +170,7 @@ void Lexer::consumeMultiline() {
             lookahead = this->read();
     }
 
-    this->error(this->position, "unexpected end of file in multiline comment");
+    this->compile_info.diagnostics.error(this->position, "unexpected end of file in multiline comment");
 }
 
 Token Lexer::lexNumber() {
@@ -194,7 +190,7 @@ Token Lexer::lexNumber() {
         if(base != 8) {
             lookahead = this->read();
             if(!this->isDigit(lookahead, base)) {
-                this->error(this->token_start, "Invalid sequence after integer base");
+                this->compile_info.diagnostics.error(this->token_start, "invalid sequence after integer base");
                 this->unread();
                 return this->makeIntToken(TokenType::LITERAL_INTEGER, BaseDataType::INT, 0);
             }
@@ -444,7 +440,7 @@ std::optional<uint32_t> Lexer::lexEscapeLiteral(uint32_t base, size_t length, bo
     for(size_t i = 0; length == 0 || i < length; ++i) {
         int c = this->read();
         if(c < 0) {
-            this->error(this->position, "unexpected end of input");
+            this->compile_info.diagnostics.error(this->position, "unexpected end of input");
             return std::nullopt;
         }
 
@@ -457,7 +453,7 @@ std::optional<uint32_t> Lexer::lexEscapeLiteral(uint32_t base, size_t length, bo
             this->unread();
             if(allow_shorter && i > 0)
                 return value;
-            this->error(this->position, "invalid escape sequence value");
+            this->compile_info.diagnostics.error(this->position, "invalid escape sequence value");
             return std::nullopt;
         }
 
@@ -465,7 +461,7 @@ std::optional<uint32_t> Lexer::lexEscapeLiteral(uint32_t base, size_t length, bo
             // Overflow
             std::cout << (char) c << " " << value << " " << (max_value / value)  << std::endl;
             this->unread();
-            this->error(this->position, "escape sequence value out of range");
+            this->compile_info.diagnostics.error(this->position, "escape sequence value out of range");
             return std::nullopt;
         }
 
@@ -482,7 +478,7 @@ Lexer::Char Lexer::lexEscapeSequence() {
     auto utf8 = [loc, this](uint32_t codepoint) {
         auto cp = CodePoint{codepoint};
         if (!cp.isValidUtf8())
-            this->error(loc, "invalid universal character constant");
+            this->compile_info.diagnostics.error(loc, "invalid universal character constant");
         Char result;
         uint8_t i = 0;
         for (auto c : cp.toUtf8()) {
@@ -502,7 +498,7 @@ Lexer::Char Lexer::lexEscapeSequence() {
     int c = this->read();
     switch (c) {
         case -1:
-            this->error(this->position, "unexpected end of escape sequence");
+            this->compile_info.diagnostics.error(this->position, "unexpected end of escape sequence");
             return invalid;
         case '\'':
         case '"':
@@ -545,7 +541,7 @@ Lexer::Char Lexer::lexEscapeSequence() {
                 return invalid;
             }
             this->unread();
-            this->error(this->position, "invalid escape sequence");
+            this->compile_info.diagnostics.error(this->position, "invalid escape sequence");
             return invalid;
     }
 }
@@ -574,10 +570,10 @@ Token Lexer::lexStringLiteral() {
             }
             case '\n':
                 this->unread();
-                this->error(this->position, "newline in string literal");
+                this->compile_info.diagnostics.error(this->position, "newline in string literal");
                 return makeStringToken();
             case -1:
-                this->error(this->position, "unexpected end of string literal");
+                this->compile_info.diagnostics.error(this->position, "unexpected end of string literal");
                 return makeStringToken();
             default:
                 this->compile_info.strings.pushToMostRecent(c);
@@ -597,23 +593,23 @@ Token Lexer::lexCharLiteral() {
     };
     switch (c) {
         case '\'':
-            this->error(loc, "empty character literal");
+            this->compile_info.diagnostics.error(loc, "empty character literal");
             break;
         case '\\': {
             auto chr = this->lexEscapeSequence();
             if(chr.len > 1) {
-                this->error(loc, "character literal too large");
+                this->compile_info.diagnostics.error(loc, "character literal too large");
             }else if(chr.len != 0)
                 char_literal = chr.bytes[0];
             break;
         }
         case '\n':
             this->unread();
-            this->error(loc, "newline in character literal");
+            this->compile_info.diagnostics.error(loc, "newline in character literal");
             return makeCharToken();
         case -1:
             this->unread();
-            this->error(loc, "unexpected end of character literal");
+            this->compile_info.diagnostics.error(loc, "unexpected end of character literal");
             return makeCharToken();
         default:
             char_literal = c;
@@ -628,13 +624,13 @@ Token Lexer::lexCharLiteral() {
         while (!end) {
             switch (c) {
                 case '\'':
-                    this->error(loc, "multi-character character literal");
+                    this->compile_info.diagnostics.error(loc, "multi-character character literal");
                     end = true;
                     break;
                 case -1:
                 case '\n':
                     this->unread();
-                    this->error(loc, "unterminated character literal");
+                    this->compile_info.diagnostics.error(loc, "unterminated character literal");
                     end = true;
                     break;
                 default:
@@ -657,7 +653,7 @@ void Lexer::lexPreprocessor() {
 
     if(lookahead < '0' || lookahead > '9') {
         this->unread();
-        this->error(pos, "invalid line marking, expecting line number");
+        this->compile_info.diagnostics.error(pos, "invalid line marking, expecting line number");
         this->consumeLine();
         return;
     }
@@ -677,7 +673,7 @@ void Lexer::lexPreprocessor() {
 
     if(lookahead != '\"') {
         this->unread();
-        this->error(pos, "invalid line marking, expecting \" after line number to start filename");
+        this->compile_info.diagnostics.error(pos, "invalid line marking, expecting \" after line number to start filename");
         this->consumeLine();
         return;
     }
@@ -690,7 +686,7 @@ void Lexer::lexPreprocessor() {
 
     if(lookahead != '\"') {
         this->unread();
-        this->error(pos, "unterminated string for filename in line directive");
+        this->compile_info.diagnostics.error(pos, "unterminated string for filename in line directive");
         this->consumeLine();
         return;
     }
