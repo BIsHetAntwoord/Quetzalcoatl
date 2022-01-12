@@ -26,9 +26,9 @@ private:
     SourceLocation token_start;
     size_t token_start_offset;
 
-    CompileInfo& compile_info;
+    bool made_token_on_line;
 
-    std::vector<CompileError> errors;
+    CompileInfo& compile_info;
 
     int read();
     void unread(size_t = 1);
@@ -43,6 +43,7 @@ private:
     bool isIdChar(int);
     bool isDigit(int, size_t = 10);
     bool isHexDigit(int);
+    bool isWhitespace(int);
 
     void consumeLine();
     void consumeMultiline();
@@ -66,12 +67,11 @@ private:
     Char lexEscapeSequence();
     Token lexStringLiteral();
     Token lexCharLiteral();
+    void lexPreprocessor();
 public:
     Lexer(std::string_view, CompileInfo&);
 
     Token lex();
-
-    std::span<const CompileError> compileErrors() const;
 };
 
 #endif

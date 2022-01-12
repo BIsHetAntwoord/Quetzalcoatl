@@ -1,3 +1,4 @@
+# 0 "main.cpp"
 int main() {
     return 0;
 }

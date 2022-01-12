@@ -84,8 +84,8 @@ const std::unordered_map<std::string_view, TokenType> KEYWORD_TYPES = {
 };
 
 Lexer::Lexer(std::string_view input, CompileInfo& compile_info) :
-    input(input), input_offset(0), position({1, 0, 0}), token_start_offset(0),
-    compile_info(compile_info) {
+    input(input), input_offset(0), position({1, 1, 0}), token_start_offset(0),
+    made_token_on_line(false), compile_info(compile_info) {
     this->compile_info.files.addFile("<unknown>");
 }
 
@@ -98,10 +98,12 @@ int Lexer::read() {
 
 void Lexer::unread(size_t num) {
     this->position.column -= num;
-    --this->input_offset;
+    this->input_offset -= num;
 }
 
 Token Lexer::makeToken(TokenType type) {
+    this->made_token_on_line = true;
+
     Token result;
     result.type = type;
     result.pos = this->token_start;
@@ -126,7 +128,7 @@ std::string_view Lexer::tokenString() {
 }
 
 void Lexer::error(SourceLocation loc, std::string_view msg) {
-    this->errors.emplace_back(loc, msg);
+    this->compile_info.errors.emplace_back(loc, msg);
 }
 
 bool Lexer::isIdChar(int c) {
@@ -146,6 +148,10 @@ bool Lexer::isDigit(int c, size_t base) {
 
 bool Lexer::isHexDigit(int c) {
     return this->isDigit(c, 16);
+}
+
+bool Lexer::isWhitespace(int c) {
+    return c == ' ' || c == '\t' || c == '\r';
 }
 
 void Lexer::consumeLine() {
@@ -188,7 +194,7 @@ Token Lexer::lexNumber() {
         if(base != 8) {
             lookahead = this->read();
             if(!this->isDigit(lookahead, base)) {
-                this->error(this->position, "Invalid sequence after integer base");
+                this->error(this->token_start, "Invalid sequence after integer base");
                 this->unread();
                 return this->makeIntToken(TokenType::LITERAL_INTEGER, BaseDataType::INT, 0);
             }
@@ -641,6 +647,62 @@ Token Lexer::lexCharLiteral() {
     return makeCharToken();
 }
 
+void Lexer::lexPreprocessor() {
+    auto pos = this->position;
+    int lookahead = this->read();
+    while(this->isWhitespace(lookahead)) {
+        pos = this->position;
+        lookahead = this->read();
+    }
+
+    if(lookahead < '0' || lookahead > '9') {
+        this->unread();
+        this->error(pos, "invalid line marking, expecting line number");
+        this->consumeLine();
+        return;
+    }
+
+    size_t line_nr = 0;
+    while(lookahead >= '0' && lookahead <= '9') {
+        line_nr *= 10;
+        line_nr += lookahead - '0';
+        lookahead = this->read();
+    }
+
+    pos = this->position;
+    while(this->isWhitespace(lookahead)) {
+        pos = this->position;
+        lookahead = this->read();
+    }
+
+    if(lookahead != '\"') {
+        this->unread();
+        this->error(pos, "invalid line marking, expecting \" after line number to start filename");
+        this->consumeLine();
+        return;
+    }
+    lookahead = this->read();
+    std::stringstream ss;
+    while(lookahead != '\n' && lookahead != '\"' && lookahead != -1) {
+        ss << (char)lookahead;
+        lookahead = this->read();
+    }
+
+    if(lookahead != '\"') {
+        this->unread();
+        this->error(pos, "unterminated string for filename in line directive");
+        this->consumeLine();
+        return;
+    }
+
+    this->consumeLine();
+
+    size_t file_id = this->compile_info.files.addFile(ss.str());
+
+    this->position.line = line_nr - 1;
+    this->position.file_id = file_id;
+}
+
 Token Lexer::lex() {
     while(true) {
         this->startToken();
@@ -654,7 +716,8 @@ Token Lexer::lex() {
                 break;
             case '\n':
                 ++this->position.line;
-                this->position.column = 0;
+                this->position.column = 1;
+                this->made_token_on_line = false;
                 break;
             case '+':
                 return this->lexPlus();
@@ -702,6 +765,12 @@ Token Lexer::lex() {
                 return this->makeToken(TokenType::COMMA);
             case '?':
                 return this->makeToken(TokenType::QUESTION);
+            case '#':
+                if(!this->made_token_on_line)
+                    this->lexPreprocessor();
+                else
+                    return this->makeToken(TokenType::INVALID);
+                break;
             case '/': {
                 lookahead = this->read();
                 if(lookahead == '=')
@@ -742,8 +811,4 @@ Token Lexer::lex() {
             }
         }
     }
-}
-
-std::span<const CompileError> Lexer::compileErrors() const {
-    return this->errors;
 }

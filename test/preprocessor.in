@@ -1,0 +1,6 @@
+# 0 "preprocessor.cpp"
+# 0 "<ingebouwd>"
+# 0 "<opdrachtregel>"
+# 1 "preprocessor.cpp"
+int main() {
+}
