@@ -11,6 +11,12 @@ const size_t INVALID_ASTNODE_ID = std::numeric_limits<size_t>::max();
 
 enum class AstNodeType {
     INVALID,
+    STATEMENT_LIST,
+
+    EMPTY_STAT,
+    EXPR_STAT,
+
+    COMMA_EXPR,
 
     INTEGER_CONSTANT
 };
