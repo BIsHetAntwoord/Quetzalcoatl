@@ -1,6 +1,7 @@
 #include "lexer/lexer.hpp"
 #include "frontend/filetable.hpp"
 #include "frontend/stringtable.hpp"
+#include "frontend/ast.hpp"
 #include "unicode.hpp"
 
 #include <iostream>

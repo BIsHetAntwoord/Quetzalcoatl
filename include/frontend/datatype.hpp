@@ -30,15 +30,15 @@ struct DataType {
 };
 
 class DataTypeTable {
-    private:
-        std::vector<DataType> data_types;
-    public:
-        DataTypeTable();
+private:
+    std::vector<DataType> data_types;
+public:
+    DataTypeTable();
 
-        size_t getBaseTypeId(BaseDataType);
+    size_t getBaseTypeId(BaseDataType);
 
-        DataType& getDataType(size_t);
-        const DataType& getDataType(size_t) const;
+    DataType& getDataType(size_t);
+    const DataType& getDataType(size_t) const;
 };
 
 #endif

@@ -10,6 +10,7 @@ project(
 
 # Final executable
 sources = [
+    'src/frontend/ast.cpp',
     'src/frontend/datatype.cpp',
     'src/frontend/filetable.cpp',
     'src/frontend/stringtable.cpp',
