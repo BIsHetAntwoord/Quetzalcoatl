@@ -1,0 +1,2 @@
+# 1 "operators.in"
+1 ? throw 2 : throw 3;

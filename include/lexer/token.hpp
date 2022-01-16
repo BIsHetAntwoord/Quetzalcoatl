@@ -86,7 +86,6 @@ enum class TokenType {
     BITAND,
     BITOR,
     XOR,
-    BITNOT,
 
     INCREMENT,
     DECREMENT,
@@ -103,6 +102,7 @@ enum class TokenType {
     STARROW,
 
     NOT,
+    BITNOT,
     AND,
     OR,
 

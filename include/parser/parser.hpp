@@ -26,7 +26,22 @@ private:
 
     [[noreturn]] void throwError(const Token&, const std::vector<TokenType>&);
 
+    std::vector<size_t> parseList(TokenType);
     size_t parseAtom();
+    size_t parsePostfix();
+    size_t parsePrefix(bool = false);
+    size_t parsePtrToMember();
+    size_t parseMultiply();
+    size_t parseAdd();
+    size_t parseShift();
+    size_t parseRelational();
+    size_t parseEquality();
+    size_t parseBitand();
+    size_t parseBitxor();
+    size_t parseBitor();
+    size_t parseAnd();
+    size_t parseOr();
+    size_t parseAssign();
     size_t parseComma();
     size_t parseExpr();
     size_t parseStatement();
