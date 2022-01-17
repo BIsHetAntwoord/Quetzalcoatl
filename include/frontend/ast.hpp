@@ -8,6 +8,8 @@
 #include <limits>
 #include <memory>
 
+struct Type;
+
 const size_t INVALID_ASTNODE_ID = std::numeric_limits<size_t>::max();
 
 enum class AstNodeType {
@@ -78,26 +80,26 @@ enum class AstNodeType {
 struct AstNode {
     AstNodeType type;
     std::vector<size_t> children;
-    size_t datatype;
+    const Type* datatype;
 
-    AstNode(AstNodeType, std::initializer_list<size_t>, size_t);
-    AstNode(AstNodeType, const std::vector<size_t>&, size_t);
+    AstNode(AstNodeType, std::initializer_list<size_t>, const Type*);
+    AstNode(AstNodeType, const std::vector<size_t>&, const Type*);
     virtual ~AstNode() = default;
 };
 
 struct IntegerAstNode : public AstNode {
     uint64_t integer;
 
-    IntegerAstNode(AstNodeType, std::initializer_list<size_t>, size_t, uint64_t);
-    IntegerAstNode(AstNodeType, const std::vector<size_t>&, size_t, uint64_t);
+    IntegerAstNode(AstNodeType, std::initializer_list<size_t>, const Type*, uint64_t);
+    IntegerAstNode(AstNodeType, const std::vector<size_t>&, const Type*, uint64_t);
 };
 
 struct SwitchAstNode : public AstNode {
     size_t default_id;
     std::vector<size_t> case_nodes;
 
-    SwitchAstNode(AstNodeType, std::initializer_list<size_t>, size_t);
-    SwitchAstNode(AstNodeType, const std::vector<size_t>&, size_t);
+    SwitchAstNode(AstNodeType, std::initializer_list<size_t>, const Type*);
+    SwitchAstNode(AstNodeType, const std::vector<size_t>&, const Type*);
 };
 
 class AstTable {
@@ -107,10 +109,10 @@ public:
     size_t addNode(AstNodeType);
     size_t addNode(AstNodeType, std::initializer_list<size_t>);
     size_t addNode(AstNodeType, const std::vector<size_t>&);
-    size_t addNode(AstNodeType, size_t);
-    size_t addNode(AstNodeType, size_t, std::initializer_list<size_t>);
-    size_t addNode(AstNodeType, size_t, const std::vector<size_t>&);
-    size_t addIntegerNode(AstNodeType, size_t, uint64_t);
+    size_t addNode(AstNodeType, const Type*);
+    size_t addNode(AstNodeType, const Type*, std::initializer_list<size_t>);
+    size_t addNode(AstNodeType, const Type*, const std::vector<size_t>&);
+    size_t addIntegerNode(AstNodeType, const Type*, uint64_t);
     size_t addSwitchNode(AstNodeType);
 
     AstNode& getNode(size_t);

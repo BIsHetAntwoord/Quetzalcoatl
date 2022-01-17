@@ -441,9 +441,9 @@ size_t Parser::parseAssign() {
             case TokenType::BITAND:
             case TokenType::KEY_SIZEOF:
             case TokenType::KEY_THROW:
-                return this->ast.addNode(AstNodeType::THROW_EXPR, this->compile_info.types.getBaseTypeId(BaseDataType::VOID), {this->parseAssign()});
+                return this->ast.addNode(AstNodeType::THROW_EXPR, this->compile_info.types.getPrimitiveType(PrimitiveType::VOID), {this->parseAssign()});
             default:
-                return this->ast.addNode(AstNodeType::RETHROW_EXPR, this->compile_info.types.getBaseTypeId(BaseDataType::VOID));
+                return this->ast.addNode(AstNodeType::RETHROW_EXPR, this->compile_info.types.getPrimitiveType(PrimitiveType::VOID));
         }
     }
 

@@ -32,7 +32,7 @@ private:
     void unread(size_t = 1);
 
     Token makeToken(TokenType);
-    Token makeIntToken(TokenType, BaseDataType, uint64_t);
+    Token makeIntToken(TokenType, PrimitiveType::Kind, uint64_t);
 
     void startToken();
     std::string_view tokenString();

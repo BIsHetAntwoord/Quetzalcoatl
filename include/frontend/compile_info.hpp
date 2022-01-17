@@ -4,18 +4,18 @@
 #include <vector>
 #include <iosfwd>
 
-#include "frontend/datatype.hpp"
+#include "frontend/type.hpp"
 #include "frontend/filetable.hpp"
 #include "frontend/stringtable.hpp"
 #include "frontend/diagnostics.hpp"
 
 struct CompileInfo {
     FileTable files;
-    DataTypeTable types;
+    TypeTable types;
     StringTable strings;
     Diagnostics diagnostics;
 
-    void printDiagnostics(std::ostream& out, bool want_color) const; 
+    void printDiagnostics(std::ostream& out, bool want_color) const;
 };
 
 #endif

@@ -11,11 +11,11 @@ project(
 # Final executable
 sources = [
     'src/frontend/ast.cpp',
-    'src/frontend/datatype.cpp',
     'src/frontend/filetable.cpp',
     'src/frontend/stringtable.cpp',
     'src/frontend/diagnostics.cpp',
     'src/frontend/compile_info.cpp',
+    'src/frontend/type.cpp',
     'src/lexer/lexer.cpp',
     'src/lexer/token.cpp',
     'src/parser/parser.cpp',

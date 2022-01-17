@@ -113,9 +113,9 @@ Token Lexer::makeToken(TokenType type) {
     return result;
 }
 
-Token Lexer::makeIntToken(TokenType type, BaseDataType base_type, uint64_t value) {
+Token Lexer::makeIntToken(TokenType type, PrimitiveType::Kind int_type, uint64_t value) {
     Token result = this->makeToken(type);
-    result.integer.type = this->compile_info.types.getBaseTypeId(base_type);
+    result.integer.type = this->compile_info.types.getPrimitiveType(int_type);
     result.integer.value = value;
     return result;
 }
@@ -194,7 +194,7 @@ Token Lexer::lexNumber() {
             if(!this->isDigit(lookahead, base)) {
                 this->compile_info.diagnostics.error(this->token_start, "invalid sequence after integer base");
                 this->unread();
-                return this->makeIntToken(TokenType::LITERAL_INTEGER, BaseDataType::INT, 0);
+                return this->makeIntToken(TokenType::LITERAL_INTEGER, PrimitiveType::INT, 0);
             }
         }
     }
@@ -213,29 +213,29 @@ Token Lexer::lexNumber() {
         lookahead = this->read();
     }
 
-    BaseDataType data_type;
+    PrimitiveType::Kind data_type;
 
     if(lookahead == 'l' || lookahead == 'L') {
         lookahead = this->read();
         if(lookahead == 'u' || lookahead == 'U')
-            data_type = BaseDataType::UNSIGNED_LONG;
+            data_type = PrimitiveType::UNSIGNED_LONG;
         else {
             if(value <= std::numeric_limits<int64_t>::max())
-                data_type = BaseDataType::LONG;
+                data_type = PrimitiveType::LONG;
             else
-                data_type = BaseDataType::UNSIGNED_LONG;
+                data_type = PrimitiveType::UNSIGNED_LONG;
             this->unread();
         }
     }
     else if(lookahead == 'u' || lookahead == 'U') {
         lookahead = this->read();
         if(lookahead == 'l' || lookahead == 'L')
-            data_type = BaseDataType::UNSIGNED_LONG;
+            data_type = PrimitiveType::UNSIGNED_LONG;
         else {
             if(value <= std::numeric_limits<uint32_t>::max())
-                data_type = BaseDataType::UNSIGNED_INT;
+                data_type = PrimitiveType::UNSIGNED_INT;
             else
-                data_type = BaseDataType::UNSIGNED_LONG;
+                data_type = PrimitiveType::UNSIGNED_LONG;
             this->unread();
         }
     }
@@ -243,13 +243,13 @@ Token Lexer::lexNumber() {
         this->unread();
 
         if(value <= std::numeric_limits<int32_t>::max())
-            data_type = BaseDataType::INT;
+            data_type = PrimitiveType::INT;
         else if(value <= std::numeric_limits<uint32_t>::max() && base != 10)
-            data_type = BaseDataType::UNSIGNED_INT;
+            data_type = PrimitiveType::UNSIGNED_INT;
         else if(value <= std::numeric_limits<int64_t>::max() || base == 10)
-            data_type = BaseDataType::LONG;
+            data_type = PrimitiveType::LONG;
         else
-            data_type = BaseDataType::UNSIGNED_LONG;
+            data_type = PrimitiveType::UNSIGNED_LONG;
     }
 
     return this->makeIntToken(TokenType::LITERAL_INTEGER, data_type, value);

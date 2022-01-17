@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 
+struct Type;
+
 enum class TokenType {
     INVALID,
     EOI,
@@ -142,7 +144,7 @@ struct Token {
     TokenType type;
     union {
         struct {
-            size_t type;
+            const Type* type;
             uint64_t value;
         } integer;
         size_t string_literal;
