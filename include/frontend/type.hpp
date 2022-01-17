@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <iosfwd>
 
 struct Type {
     Type() = default;
@@ -13,6 +14,8 @@ struct Type {
 
     Type& operator=(const Type&) = delete;
     Type& operator=(Type&&) = delete;
+
+    virtual void print(std::ostream& os) const = 0; 
 
     virtual ~Type() = default;
 };
@@ -44,11 +47,15 @@ struct PrimitiveType : public Type {
     Kind kind;
 
     explicit PrimitiveType(Kind kind): kind(kind) {}
+
+    void print(std::ostream& os) const override;
 };
 
 struct PointerType : public Type {
     // TODO: Qualifiers
     Type* child;
+
+    void print(std::ostream& os) const override;
 };
 
 class TypeTable {
@@ -70,5 +77,7 @@ public:
         return ptr;
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const Type& type);
 
 #endif
