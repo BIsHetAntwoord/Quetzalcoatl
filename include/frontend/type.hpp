@@ -71,7 +71,7 @@ public:
     TypeTable(const TypeTable&) = delete;
     TypeTable& operator=(const TypeTable&) = delete;
 
-    Id getPrimitiveType(PrimitiveType::Kind kind) const {
+    inline Id getPrimitiveType(PrimitiveType::Kind kind) const {
         return static_cast<Id>(kind);
     }
 
@@ -86,7 +86,7 @@ public:
         return id;
     }
 
-    const Type& get(Id id) const {
+    inline const Type& get(Id id) const {
         return *this->types[id];
     }
 };
