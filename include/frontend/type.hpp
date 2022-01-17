@@ -68,6 +68,9 @@ public:
 
     TypeTable();
 
+    TypeTable(const TypeTable&) = delete;
+    TypeTable& operator=(const TypeTable&) = delete;
+
     Id getPrimitiveType(PrimitiveType::Kind kind) const {
         return static_cast<Id>(kind);
     }
@@ -78,9 +81,9 @@ public:
             return this->getPrimitiveType(std::forward<Args>()...);
 
         auto unique = std::make_unique<T>(std::forward<Args>()...);
-        auto* ptr = unique.get();
-        this->types.push_back(std::move(ptr));
-        return ptr;
+        auto id = this->types.size();
+        this->types.push_back(std::move(unique));
+        return id;
     }
 
     const Type& get(Id id) const {

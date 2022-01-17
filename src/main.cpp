@@ -10,7 +10,7 @@
 #include <sstream>
 #include <bitset>
 
-void print_tree(CompileInfo compile_info, AstTable& ast, size_t node, size_t indent = 0) {
+void print_tree(CompileInfo& compile_info, AstTable& ast, size_t node, size_t indent = 0) {
     auto print_indent = [&]() {
         for(size_t i = 0; i < indent; ++i) {
             std::cout << "  ";
@@ -24,9 +24,9 @@ void print_tree(CompileInfo compile_info, AstTable& ast, size_t node, size_t ind
     ++indent;
     print_indent();
     std::cout << "type: " << size_t(node_info.type) << std::endl;
-    if (node_info.datatype) {
+    if (node_info.datatype != 0) {
         print_indent();
-        // std::cout << "datatype: " << compile_info.types.get(node_info.datatype) << std::endl;
+        std::cout << "datatype: " << compile_info.types.get(node_info.datatype) << std::endl;
     }
     switch(node_info.type) {
         case AstNodeType::INTEGER_CONSTANT: {
