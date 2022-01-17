@@ -8,7 +8,7 @@ project(
     ]
 )
 
-fmt_dep = subproject('fmt').get_variable('fmt_dep')
+fmt_dep = dependency('fmt')
 
 # Final executable
 sources = [
