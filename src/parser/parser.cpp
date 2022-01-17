@@ -4,8 +4,10 @@
 #include <sstream>
 #include <limits>
 
+#include <iostream>
+
 Parser::Parser(Lexer& lexer, CompileInfo& compile_info, AstTable& ast) :
-        lexer(lexer), compile_info(compile_info), ast(ast) {
+        lexer(lexer), compile_info(compile_info), ast(ast), nearest_switch(INVALID_ASTNODE_ID) {
 
 }
 
@@ -92,7 +94,7 @@ size_t Parser::parseAtom() {
 
     switch(lookahead.type) {
         case TokenType::LITERAL_INTEGER:
-            return this->ast.addNode(AstNodeType::INTEGER_CONSTANT, lookahead.integer.type, lookahead.integer.value);
+            return this->ast.addIntegerNode(AstNodeType::INTEGER_CONSTANT, lookahead.integer.type, lookahead.integer.value);
         case TokenType::OPEN_PAR: {
             size_t result = this->parseExpr();
             this->expect(TokenType::CLOSE_PAR);
@@ -525,6 +527,101 @@ size_t Parser::parseExpr() {
     return this->parseComma();
 }
 
+size_t Parser::parseCompoundStatement() {
+    this->expect(TokenType::OPEN_CB);
+    size_t result = this->parseStatementList();
+    this->expect(TokenType::CLOSE_CB);
+    return result;
+}
+
+size_t Parser::parseIf() {
+    this->expect(TokenType::KEY_IF);
+    this->expect(TokenType::OPEN_PAR);
+
+    size_t expr = this->parseExpr();
+
+    this->expect(TokenType::CLOSE_PAR);
+
+    size_t stat = this->parseStatement();
+
+    Token lookahead = this->peek_token();
+    if(lookahead.type == TokenType::KEY_ELSE) {
+        this->consume();
+
+        size_t else_stat = this->parseStatement();
+        return this->ast.addNode(AstNodeType::IF_ELSE_STAT, {expr, stat, else_stat});
+    }
+    else
+        return this->ast.addNode(AstNodeType::IF_STAT, {expr, stat});
+}
+
+size_t Parser::parseSwitch() {
+    std::cout << "Making switch " << std::endl;
+    size_t switch_stat = this->ast.addSwitchNode(AstNodeType::SWITCH_STAT);
+    std::cout << "Allocated switch" << std::endl;
+
+    this->expect(TokenType::KEY_SWITCH);
+    this->expect(TokenType::OPEN_PAR);
+    size_t expr = this->parseExpr();
+    this->expect(TokenType::CLOSE_PAR);
+
+    std::cout << "Parsed expression" << std::endl;
+
+    size_t old_switch_stat = this->nearest_switch;
+    this->nearest_switch = switch_stat;
+
+    size_t stat = this->parseStatement();
+
+    std::cout << "Parsed statement" << std::endl;
+
+    AstNode& switch_node = this->ast.getNode(switch_stat);
+    switch_node.children.push_back(expr);
+    switch_node.children.push_back(stat);
+
+    this->nearest_switch = old_switch_stat;
+
+    std::cout << "Returning" << std::endl;
+    return switch_stat;
+}
+
+size_t Parser::parseDefault() {
+    Token def_tok = this->expect(TokenType::KEY_DEFAULT);
+    this->expect(TokenType::COLON);
+
+    if(this->nearest_switch == INVALID_ASTNODE_ID) {
+        this->compile_info.diagnostics.error(def_tok.pos, "default outside of switch");
+        throw ParseException();
+    }
+
+    size_t def_node = this->ast.addNode(AstNodeType::DEFAULT_LABEL);
+    SwitchAstNode& switch_node = (SwitchAstNode&)this->ast.getNode(this->nearest_switch);
+    if(switch_node.default_id != INVALID_ASTNODE_ID) {
+        this->compile_info.diagnostics.error(def_tok.pos, "multiple default in switch");
+        throw ParseException();
+    }
+
+    switch_node.default_id = def_node;
+    return def_node;
+}
+
+size_t Parser::parseCase() {
+    Token case_tok = this->expect(TokenType::KEY_CASE);
+    size_t case_expr = this->parseExpr();
+    this->expect(TokenType::COLON);
+
+    if(this->nearest_switch == INVALID_ASTNODE_ID) {
+        this->compile_info.diagnostics.error(case_tok.pos, "case outside of switch");
+        throw ParseException();
+    }
+
+    size_t case_node = this->ast.addNode(AstNodeType::CASE_LABEL, {case_expr});
+    SwitchAstNode& switch_node = (SwitchAstNode&)this->ast.getNode(this->nearest_switch);
+    switch_node.case_nodes.push_back(case_node);
+
+    //TODO: check for multiple identical switch cases
+    return case_node;
+}
+
 size_t Parser::parseStatement() {
     Token lookahead = this->peek_token();
     //TODO: add lookahead for various other statement types
@@ -547,6 +644,16 @@ size_t Parser::parseStatement() {
         case TokenType::SEMICOLON:
             this->consume();
             return this->ast.addNode(AstNodeType::EMPTY_STAT);
+        case TokenType::OPEN_CB:
+            return this->parseCompoundStatement();
+        case TokenType::KEY_IF:
+            return this->parseIf();
+        case TokenType::KEY_SWITCH:
+            return this->parseSwitch();
+        case TokenType::KEY_DEFAULT:
+            return this->parseDefault();
+        case TokenType::KEY_CASE:
+            return this->parseCase();
         default:
             this->throwError(lookahead, {TokenType::LITERAL_INTEGER, TokenType::SEMICOLON});
     }
@@ -568,7 +675,12 @@ size_t Parser::parseStatementList() {
             || lookahead.type == TokenType::BITAND
             || lookahead.type == TokenType::KEY_SIZEOF
             || lookahead.type == TokenType::KEY_THROW
-            || lookahead.type == TokenType::SEMICOLON) {
+            || lookahead.type == TokenType::SEMICOLON
+            || lookahead.type == TokenType::OPEN_CB
+            || lookahead.type == TokenType::KEY_IF
+            || lookahead.type == TokenType::KEY_SWITCH
+            || lookahead.type == TokenType::KEY_DEFAULT
+            || lookahead.type == TokenType::KEY_CASE) {
         size_t sub_stat = this->parseStatement();
         children.push_back(sub_stat);
 

@@ -1,0 +1,8 @@
+switch(0) {
+    case 0:
+        1;
+    case 2:
+        3;
+    default:
+        5;
+}

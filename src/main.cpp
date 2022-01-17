@@ -17,7 +17,7 @@ void print_tree(AstTable& ast, size_t node, size_t indent = 0) {
         }
     };
 
-    auto& node_info = ast.getNode(node);
+    AstNode& node_info = ast.getNode(node);
 
     print_indent();
     std::cout << "Node " << node << ":" << std::endl;
@@ -28,10 +28,36 @@ void print_tree(AstTable& ast, size_t node, size_t indent = 0) {
     std::cout << "datatype: " << node_info.datatype << std::endl;
 
     switch(node_info.type) {
-        case AstNodeType::INTEGER_CONSTANT:
+        case AstNodeType::INTEGER_CONSTANT: {
             print_indent();
-            std::cout << "integer: " << node_info.integer << std::endl;
+
+            IntegerAstNode& integer_node_info = (IntegerAstNode&)node_info;
+            std::cout << "integer: " << integer_node_info.integer << std::endl;
             break;
+        }
+        case AstNodeType::SWITCH_STAT: {
+            SwitchAstNode& switch_node_info = (SwitchAstNode&)node_info;
+            if(switch_node_info.default_id != INVALID_ASTNODE_ID) {
+                print_indent();
+                std::cout << "default: " << switch_node_info.default_id << std::endl;
+            }
+
+            if(switch_node_info.case_nodes.size() > 0) {
+                print_indent();
+                std::cout << "cases: ";
+                bool first = true;
+                for(size_t case_id : switch_node_info.case_nodes) {
+                    if(first)
+                        first = false;
+                    else
+                        std::cout << ", ";
+
+                    std::cout << case_id;
+                }
+                std::cout << std::endl;
+            }
+            break;
+        }
         default:
             break;
     }

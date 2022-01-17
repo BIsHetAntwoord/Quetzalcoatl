@@ -16,6 +16,7 @@ private:
     AstTable& ast;
 
     std::vector<Token> token_stack;
+    size_t nearest_switch;
 
     Token next_token();
     Token peek_token();
@@ -44,6 +45,11 @@ private:
     size_t parseAssign();
     size_t parseComma();
     size_t parseExpr();
+    size_t parseCompoundStatement();
+    size_t parseIf();
+    size_t parseSwitch();
+    size_t parseDefault();
+    size_t parseCase();
     size_t parseStatement();
     size_t parseStatementList();
 public:
