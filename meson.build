@@ -8,6 +8,8 @@ project(
     ]
 )
 
+fmt_dep = subproject('fmt').get_variable('fmt_dep')
+
 # Final executable
 sources = [
     'src/frontend/ast.cpp',
@@ -26,6 +28,7 @@ sources = [
 executable(
     'quetzalcoatl',
     [sources],
+    dependencies: [fmt_dep],
     install: true,
     build_by_default: true,
     include_directories: [include_directories('include')]
