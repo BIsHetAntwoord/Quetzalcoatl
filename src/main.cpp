@@ -10,7 +10,7 @@
 #include <sstream>
 #include <bitset>
 
-void print_tree(AstTable& ast, size_t node, size_t indent = 0) {
+void print_tree(CompileInfo compile_info, AstTable& ast, size_t node, size_t indent = 0) {
     auto print_indent = [&]() {
         for(size_t i = 0; i < indent; ++i) {
             std::cout << "  ";
@@ -26,7 +26,7 @@ void print_tree(AstTable& ast, size_t node, size_t indent = 0) {
     std::cout << "type: " << size_t(node_info.type) << std::endl;
     if (node_info.datatype) {
         print_indent();
-        std::cout << "datatype: " << *node_info.datatype << std::endl;
+        // std::cout << "datatype: " << compile_info.types.get(node_info.datatype) << std::endl;
     }
     switch(node_info.type) {
         case AstNodeType::INTEGER_CONSTANT: {
@@ -68,7 +68,7 @@ void print_tree(AstTable& ast, size_t node, size_t indent = 0) {
         std::cout << "children:" << std::endl;
 
         for(size_t i : node_info.children) {
-            print_tree(ast, i, indent+1);
+            print_tree(compile_info, ast, i, indent+1);
         }
     }
 }
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 
     size_t root_node = parser.parse();
     if(root_node != INVALID_ASTNODE_ID)
-        print_tree(ast, root_node);
+        print_tree(compile_info, ast, root_node);
 
     compile_info.printDiagnostics(std::cout, true);
     return 0;

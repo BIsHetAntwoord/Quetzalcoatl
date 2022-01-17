@@ -16,10 +16,13 @@ class StringTable {
     std::vector<String> strings;
 public:
     using View = std::basic_string_view<uint8_t>;
+    using Id = size_t;
 
-    size_t add(View str);
+    Id add(View str);
     void pushToMostRecent(uint8_t c);
-    View get(size_t id) const;
+    View get(Id id) const;
 };
+
+using StringId = StringTable::Id;
 
 #endif

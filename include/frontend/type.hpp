@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <iosfwd>
+#include <cstddef>
 
 struct Type {
     Type() = default;
@@ -15,7 +16,7 @@ struct Type {
     Type& operator=(const Type&) = delete;
     Type& operator=(Type&&) = delete;
 
-    virtual void print(std::ostream& os) const = 0; 
+    virtual void print(std::ostream& os) const = 0;
 
     virtual ~Type() = default;
 };
@@ -63,11 +64,16 @@ private:
     std::vector<std::unique_ptr<Type>> types;
 
 public:
+    using Id = size_t;
+
     TypeTable();
-    const Type* getPrimitiveType(PrimitiveType::Kind kind) const;
+
+    Id getPrimitiveType(PrimitiveType::Kind kind) const {
+        return static_cast<Id>(kind);
+    }
 
     template <typename T, typename... Args>
-    const Type* addType(Args&&... args) {
+    Id addType(Args&&... args) {
         if constexpr (std::is_same_v<T, PrimitiveType>)
             return this->getPrimitiveType(std::forward<Args>()...);
 
@@ -76,7 +82,13 @@ public:
         this->types.push_back(std::move(ptr));
         return ptr;
     }
+
+    const Type& get(Id id) const {
+        return *this->types[id];
+    }
 };
+
+using TypeId = TypeTable::Id;
 
 std::ostream& operator<<(std::ostream& os, const Type& type);
 

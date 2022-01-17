@@ -37,14 +37,10 @@ void PointerType::print(std::ostream& os) const {
 }
 
 TypeTable::TypeTable() {
-    for (size_t i = size_t{PrimitiveType::VOID}; i < size_t{PrimitiveType::LONG_DOUBLE}; ++i) {
-        assert(this->types.size() == i);
-        this->types.push_back(std::make_unique<PrimitiveType>(static_cast<PrimitiveType::Kind>(i)));
-    }
-}
-
-const Type* TypeTable::getPrimitiveType(PrimitiveType::Kind kind) const {
-    return this->types[static_cast<size_t>(kind)].get();
+    // for (size_t i = size_t{PrimitiveType::VOID}; i < size_t{PrimitiveType::LONG_DOUBLE}; ++i) {
+    //     assert(this->types.size() == i);
+    //     this->types.push_back(std::make_unique<PrimitiveType>(static_cast<PrimitiveType::Kind>(i)));
+    // }
 }
 
 std::ostream& operator<<(std::ostream& os, const Type& type) {

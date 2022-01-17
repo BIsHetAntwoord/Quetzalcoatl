@@ -2,13 +2,13 @@
 #define _QUETZALCOATL_LEXER_TOKEN_HPP
 
 #include "frontend/source_location.hpp"
+#include "frontend/type.hpp"
+#include "frontend/stringtable.hpp"
 
 #include <string_view>
 #include <string>
 #include <cstddef>
 #include <cstdint>
-
-struct Type;
 
 enum class TokenType {
     INVALID,
@@ -144,10 +144,10 @@ struct Token {
     TokenType type;
     union {
         struct {
-            const Type* type;
+            TypeId type;
             uint64_t value;
         } integer;
-        size_t string_literal;
+        StringId string_literal;
         uint8_t char_literal;
     };
     std::string_view raw;
