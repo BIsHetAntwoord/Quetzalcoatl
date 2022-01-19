@@ -21,6 +21,8 @@ enum class AstNodeType {
     IF_STAT,
     IF_ELSE_STAT,
     SWITCH_STAT,
+    WHILE_STAT,
+    DO_WHILE_STAT,
 
     DEFAULT_LABEL,
     CASE_LABEL,

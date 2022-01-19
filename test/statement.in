@@ -1,8 +1,9 @@
-switch(0) {
-    case 0:
-        1;
-    case 2:
+switch(1) {
+    do {
+        case 2:
         3;
+        case 1:
+    } while(2);
     default:
-        5;
+        4;
 }

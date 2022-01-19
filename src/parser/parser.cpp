@@ -622,6 +622,33 @@ size_t Parser::parseCase() {
     return case_node;
 }
 
+size_t Parser::parseCondition() {
+    //TODO: allow declarations here
+    return this->parseExpr();
+}
+
+size_t Parser::parseWhile() {
+    this->expect(TokenType::KEY_WHILE);
+
+    this->expect(TokenType::OPEN_PAR);
+    size_t cond = this->parseCondition();
+    this->expect(TokenType::CLOSE_PAR);
+
+    size_t stat = this->parseStatement();
+
+    return this->ast.addNode(AstNodeType::WHILE_STAT, {cond, stat});
+}
+
+size_t Parser::parseDoWhile() {
+    this->expect(TokenType::KEY_DO);
+    size_t stat = this->parseStatement();
+    this->expect(TokenType::KEY_WHILE);
+    this->expect(TokenType::OPEN_PAR);
+    size_t cond = this->parseExpr();
+    this->expect(TokenType::CLOSE_PAR);
+    return this->ast.addNode(AstNodeType::DO_WHILE_STAT, {stat, cond});
+}
+
 size_t Parser::parseStatement() {
     Token lookahead = this->peek_token();
     //TODO: add lookahead for various other statement types
@@ -654,6 +681,10 @@ size_t Parser::parseStatement() {
             return this->parseDefault();
         case TokenType::KEY_CASE:
             return this->parseCase();
+        case TokenType::KEY_WHILE:
+            return this->parseWhile();
+        case TokenType::KEY_DO:
+            return this->parseDoWhile();
         default:
             this->throwError(lookahead, {TokenType::LITERAL_INTEGER, TokenType::SEMICOLON});
     }
@@ -680,7 +711,9 @@ size_t Parser::parseStatementList() {
             || lookahead.type == TokenType::KEY_IF
             || lookahead.type == TokenType::KEY_SWITCH
             || lookahead.type == TokenType::KEY_DEFAULT
-            || lookahead.type == TokenType::KEY_CASE) {
+            || lookahead.type == TokenType::KEY_CASE
+            || lookahead.type == TokenType::KEY_WHILE
+            || lookahead.type == TokenType::KEY_DO) {
         size_t sub_stat = this->parseStatement();
         children.push_back(sub_stat);
 

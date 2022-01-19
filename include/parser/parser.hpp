@@ -50,6 +50,9 @@ private:
     size_t parseSwitch();
     size_t parseDefault();
     size_t parseCase();
+    size_t parseCondition();
+    size_t parseWhile();
+    size_t parseDoWhile();
     size_t parseStatement();
     size_t parseStatementList();
 public:
