@@ -23,10 +23,15 @@ enum class AstNodeType {
     SWITCH_STAT,
     WHILE_STAT,
     DO_WHILE_STAT,
+    FOR_STAT,
+    BREAK_STAT,
+    CONTINUE_STAT,
+    RETURN_STAT,
 
     DEFAULT_LABEL,
     CASE_LABEL,
 
+    EMPTY_EXPR,
     ADD_EXPR,
     SUB_EXPR,
     MUL_EXPR,

@@ -53,6 +53,10 @@ private:
     size_t parseCondition();
     size_t parseWhile();
     size_t parseDoWhile();
+    size_t parseSimpleDecl();
+    size_t parseForInit();
+    size_t parseFor();
+    size_t parseReturn();
     size_t parseStatement();
     size_t parseStatementList();
 public:

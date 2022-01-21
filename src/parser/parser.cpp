@@ -649,6 +649,98 @@ size_t Parser::parseDoWhile() {
     return this->ast.addNode(AstNodeType::DO_WHILE_STAT, {stat, cond});
 }
 
+size_t Parser::parseSimpleDecl() {
+    Token lookahead = this->peek_token();
+    switch(lookahead.type) {
+        case TokenType::SEMICOLON:
+            this->consume();
+            return this->ast.addNode(AstNodeType::EMPTY_EXPR);
+        default:
+            this->throwError(lookahead, {
+                TokenType::SEMICOLON
+            });
+    }
+}
+
+size_t Parser::parseForInit() {
+    Token lookahead = this->peek_token();
+    switch(lookahead.type) {
+        //TODO: add other expression initial tokens
+        case TokenType::LITERAL_INTEGER:
+        case TokenType::INCREMENT:
+        case TokenType::DECREMENT:
+        case TokenType::OPEN_PAR:
+        case TokenType::NOT:
+        case TokenType::BITNOT:
+        case TokenType::STAR:
+        case TokenType::BITAND:
+        case TokenType::KEY_SIZEOF:
+        case TokenType::KEY_THROW: {
+            size_t result = this->parseExpr();
+            this->expect(TokenType::SEMICOLON);
+            return result;
+            break;
+        }
+        //TODO: add simple declaration initial tokens
+        case TokenType::SEMICOLON:
+            return this->parseSimpleDecl();
+        default:
+            this->throwError(lookahead, {
+                TokenType::LITERAL_INTEGER,
+                TokenType::INCREMENT,
+                TokenType::DECREMENT,
+                TokenType::OPEN_PAR,
+                TokenType::NOT,
+                TokenType::BITNOT,
+                TokenType::STAR,
+                TokenType::BITAND,
+                TokenType::KEY_SIZEOF,
+                TokenType::KEY_THROW,
+                TokenType::SEMICOLON
+            });
+    }
+}
+
+size_t Parser::parseFor() {
+    this->expect(TokenType::KEY_FOR);
+    this->expect(TokenType::OPEN_PAR);
+    size_t for_init = this->parseForInit();
+
+    Token lookahead = this->peek_token();
+    size_t cond = INVALID_ASTNODE_ID;
+    if(lookahead.type != TokenType::SEMICOLON)
+        cond = this->parseCondition();
+    else
+        cond = this->ast.addNode(AstNodeType::EMPTY_EXPR);
+    this->expect(TokenType::SEMICOLON);
+
+    lookahead = this->peek_token();
+    size_t incr = INVALID_ASTNODE_ID;
+    if(lookahead.type != TokenType::CLOSE_PAR)
+        incr = this->parseExpr();
+    else
+        incr = this->ast.addNode(AstNodeType::EMPTY_EXPR);
+    this->expect(TokenType::CLOSE_PAR);
+
+    size_t stat = this->parseStatement();
+    return this->ast.addNode(AstNodeType::FOR_STAT, {for_init, cond, incr, stat});
+}
+
+size_t Parser::parseReturn() {
+    this->expect(TokenType::KEY_RETURN);
+
+    Token lookahead = this->peek_token();
+    if(lookahead.type == TokenType::SEMICOLON) {
+        this->consume();
+        return this->ast.addNode(AstNodeType::RETURN_STAT);
+    }
+    else {
+        size_t expr = this->parseExpr();
+        this->expect(TokenType::SEMICOLON);
+        return this->ast.addNode(AstNodeType::RETURN_STAT, {expr});
+    }
+}
+
 size_t Parser::parseStatement() {
     Token lookahead = this->peek_token();
     //TODO: add lookahead for various other statement types
@@ -685,8 +777,43 @@ size_t Parser::parseStatement() {
             return this->parseWhile();
         case TokenType::KEY_DO:
             return this->parseDoWhile();
+        case TokenType::KEY_FOR:
+            return this->parseFor();
+        case TokenType::KEY_BREAK:
+            this->consume();
+            this->expect(TokenType::SEMICOLON);
+            return this->ast.addNode(AstNodeType::BREAK_STAT);
+        case TokenType::KEY_CONTINUE:
+            this->consume();
+            this->expect(TokenType::SEMICOLON);
+            return this->ast.addNode(AstNodeType::CONTINUE_STAT);
+        case TokenType::KEY_RETURN:
+            return this->parseReturn();
         default:
-            this->throwError(lookahead, {TokenType::LITERAL_INTEGER, TokenType::SEMICOLON});
+            this->throwError(lookahead, {
+                TokenType::LITERAL_INTEGER,
+                TokenType::INCREMENT,
+                TokenType::DECREMENT,
+                TokenType::OPEN_PAR,
+                TokenType::NOT,
+                TokenType::BITNOT,
+                TokenType::STAR,
+                TokenType::BITAND,
+                TokenType::KEY_SIZEOF,
+                TokenType::KEY_THROW,
+                TokenType::SEMICOLON,
+                TokenType::OPEN_CB,
+                TokenType::KEY_IF,
+                TokenType::KEY_SWITCH,
+                TokenType::KEY_DEFAULT,
+                TokenType::KEY_CASE,
+                TokenType::KEY_WHILE,
+                TokenType::KEY_DO,
+                TokenType::KEY_FOR,
+                TokenType::KEY_BREAK,
+                TokenType::KEY_CONTINUE,
+                TokenType::KEY_RETURN
+            });
     }
 }
 
@@ -713,7 +840,11 @@ size_t Parser::parseStatementList() {
             || lookahead.type == TokenType::KEY_DEFAULT
             || lookahead.type == TokenType::KEY_CASE
             || lookahead.type == TokenType::KEY_WHILE
-            || lookahead.type == TokenType::KEY_DO) {
+            || lookahead.type == TokenType::KEY_DO
+            || lookahead.type == TokenType::KEY_FOR
+            || lookahead.type == TokenType::KEY_BREAK
+            || lookahead.type == TokenType::KEY_CONTINUE
+            || lookahead.type == TokenType::KEY_RETURN) {
         size_t sub_stat = this->parseStatement();
         children.push_back(sub_stat);
 
